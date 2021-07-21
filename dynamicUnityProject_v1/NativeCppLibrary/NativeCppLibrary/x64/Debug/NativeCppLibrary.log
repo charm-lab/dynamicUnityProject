@@ -1,0 +1,6 @@
+﻿  pch.cpp
+  dllmain.cpp
+  NativeCppLibrary.cpp
+  Generating Code...
+     Creating library C:\Users\Jasmin\Documents\OneDrive - Stanford\Unity Reseach Project\dynamicUnityProject\NativeCppLibrary\x64\Debug\NativeCppLibrary.lib and object C:\Users\Jasmin\Documents\OneDrive - Stanford\Unity Reseach Project\dynamicUnityProject\NativeCppLibrary\x64\Debug\NativeCppLibrary.exp
+  NativeCppLibrary.vcxproj -> C:\Users\Jasmin\Documents\OneDrive - Stanford\Unity Reseach Project\dynamicUnityProject\NativeCppLibrary\x64\Debug\NativeCppLibrary.dll

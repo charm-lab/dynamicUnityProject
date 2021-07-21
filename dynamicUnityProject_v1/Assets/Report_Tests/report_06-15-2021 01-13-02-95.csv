@@ -1,0 +1,4 @@
+Arduino desiredPos1 [mm],Arduino desiredPos2 [mm],Arduino finalPos1 [mm],Arduino finalPos2 [mm],Arduino Elapsed Time [ms],Unity Current Time [sec],Trial Number,IRL Timestamp
+.00,0.00,0.00,0.00,8235234.00,15.83,1.00,06-15-2021 01-13-02-96
+0.00,0.00,0.00,0.00,8235279.00,15.83,1.00,06-15-2021 01-13-03-19
+0.00,0.00,0.00,0.00,8235323.0,15.83,1.00,06-15-2021 01-13-03-23
