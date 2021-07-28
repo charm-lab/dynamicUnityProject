@@ -15,7 +15,7 @@ public class GameLogic : MonoBehaviour
     public float indexForce;
     Vector3 indexScaling;
 
-    float indexPositionCommand;
+    public float indexPositionCommand;
 
     [Header("Thumb Variables")]
     public Vector3 thumbSpherePosition;
@@ -24,7 +24,7 @@ public class GameLogic : MonoBehaviour
     public float thumbForce;
     Vector3 thumbScaling;
 
-    float thumbPositionCommand;
+    public float thumbPositionCommand;
 
     /**** Create SPHERE *****/
     GameObject sphere; //Instatiate Sphere GameObject
@@ -263,12 +263,11 @@ public class GameLogic : MonoBehaviour
     {
         return thumbForce;
     }
- 
     
     public float getPositionCommand(float force)
     {
-        /*To be adjusted*/
-        return force;
+        /*penetration value in mm*/
+        return 1000 * (force / sphereStiffness);
     }
 
 

@@ -503,9 +503,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1192714444}
+  - component: {fileID: 1192714445}
   - component: {fileID: 1192714443}
   m_Layer: 0
-  m_Name: Game Logic
+  m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -518,19 +519,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1192714442}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7275b3c462f715c4ebebfdbdc8073137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   indexSpherePosition: {x: 0, y: 0, z: 0}
-  indexDistToCenter: {x: 0, y: 0, z: 0}
-  indexToSpherePenetration: {x: 0, y: 0, z: 0}
-  indexForce: {x: 0, y: 0, z: 0}
+  indexDistToCenter: 0
+  indexToSpherePenetration: 0
+  indexForce: 0
+  indexPositionCommand: 0
   thumbSpherePosition: {x: 0, y: 0, z: 0}
-  thumbDistToCenter: {x: 0, y: 0, z: 0}
-  thumbToSpherePenetration: {x: 0, y: 0, z: 0}
-  thumbForce: {x: 0, y: 0, z: 0}
+  thumbDistToCenter: 0
+  thumbToSpherePenetration: 0
+  thumbForce: 0
+  thumbPositionCommand: 0
   spherePosition: {x: 0, y: 0, z: 0}
 --- !u!4 &1192714444
 Transform:
@@ -546,6 +549,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1192714445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192714442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfe919b3192a5e1418be9ae76fbcf2ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  portName: COM3
+  baudRate: 9600
 --- !u!1 &1409151990
 GameObject:
   m_ObjectHideFlags: 0
