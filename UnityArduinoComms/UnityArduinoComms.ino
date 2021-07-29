@@ -125,11 +125,11 @@ void loop() {
   //delay(1);
   numLoops++;
 
-  //currentTime = millis();
-  arduinoElapsedTime = startTime; //currentTime - startTime;
+  currentTime = millis();
+  arduinoElapsedTime = currentTime - startTime;
 
   //Prep Data for Processing:
-  Serial.println((String)desiredPos1 + "," + (String)desiredPos2 + "," + (String)finalPosition1 + "," + (String)finalPosition2 + "," + (String)arduinoElapsedTime + "," + (String)unityCurrentTime + "," + (String)trialNumber);
+  Serial.println((String)finalPosition1 + "," + (String)finalPosition2 + "," + (String)arduinoElapsedTime);
   //Serial.println((String)desiredPos1 + "," + (String)desiredPos2 + "," + (String)arduinoElapsedTime + "," + (String)unityCurrentTime + "," + (String)trialNumber);
 
 }
@@ -151,8 +151,10 @@ void receiveSerial() {
 
     String inByte1 = rawData.substring(0, rawData.indexOf("A"));
     String inByte2 = rawData.substring(rawData.indexOf("A") + 1, rawData.indexOf("B"));
+    /*
     String inByte3 = rawData.substring(rawData.indexOf("B") + 1, rawData.indexOf("C"));
     String inByte4 = rawData.substring(rawData.indexOf("C") + 1, rawData.indexOf("D"));
+    */
   /*
     Serial.println("raw inByte1: " + inByte1);
     Serial.println("raw inByte2: " + inByte2);
@@ -166,8 +168,10 @@ void receiveSerial() {
    
     desiredPos1 = inByte1.toDouble();
     desiredPos2 = inByte2.toDouble();
+    /*
     unityCurrentTime = inByte3.toDouble();
     trialNumber = inByte4.toDouble();
+    */
     //Serial.println("ARDUINO --> desiredPos1: " + (String)desiredPos1 + " desiredPos2: " + (String)desiredPos2);
   }
 }

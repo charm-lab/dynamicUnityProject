@@ -17,6 +17,7 @@ public class SerialComms : MonoBehaviour
     private float currentTime = 0.0f;
 
     public static string[] ardninoDataVals;
+    public static float[] unityDataVals;
 
     // Start is called before the first frame update
     void Start()
@@ -53,18 +54,43 @@ public class SerialComms : MonoBehaviour
                 float num3 = currentTime;
                 int num4 = 0;//gameLogic.trialNumber; // stop or trial number
 
-                string message = num1.ToString() + "A" + num2.ToString() + "B" + num3.ToString() + "C" + num4.ToString() + "D";
+                string message = num1.ToString() + "A" + num2.ToString() + "B";// + num3.ToString() + "C" + num4.ToString() + "D";
                 //Debug.Log(message);
 
+                //Prep Unity variables for saving
+                
+                unityDataVals = new float[] {num1,
+                    player.GetComponent<GameLogic>().indexSpherePosition.x,
+                    player.GetComponent<GameLogic>().indexSpherePosition.y,
+                    player.GetComponent<GameLogic>().indexSpherePosition.z,
+                    num2,
+                    player.GetComponent<GameLogic>().thumbSpherePosition.x,
+                    player.GetComponent<GameLogic>().thumbSpherePosition.y,
+                    player.GetComponent<GameLogic>().thumbSpherePosition.z,
+                    player.GetComponent<GameLogic>().spherePosition.x,
+                    player.GetComponent<GameLogic>().spherePosition.y,
+                    player.GetComponent<GameLogic>().spherePosition.z,
+                    player.GetComponent<GameLogic>().startingAreaPosition.x,
+                    player.GetComponent<GameLogic>().startingAreaPosition.y,
+                    player.GetComponent<GameLogic>().startingAreaPosition.z,
+                    player.GetComponent<GameLogic>().targetAreaPosition.x,
+                    player.GetComponent<GameLogic>().targetAreaPosition.y,
+                    player.GetComponent<GameLogic>().targetAreaPosition.z,
+                    currentTime };
+
+                //Write to Arudino via serial
                 writeSerial(message);
 
+                #region
                 /*
                 message_returns = false;
                 while message_returns is false:
                     message_returns = readSerial();
                 Thread.sleep(1);
                 */
+                #endregion
 
+                //Read the serial data that cam from arduino
                 readSerial();
 
                 //Debug.Log("Back from Arduino");
@@ -105,7 +131,6 @@ public class SerialComms : MonoBehaviour
     {
         if (stream.IsOpen)
         {
-
             try
             {
                 //read stuff
@@ -115,15 +140,17 @@ public class SerialComms : MonoBehaviour
                 //Debug.Log(arduinoMessage);
                 //Debug.Log(ardninoDataVals.Length);
 
-                if (ardninoDataVals.Length != 7)
+                
+                if (ardninoDataVals.Length != 3)
                 {
                     //Data is invalid - do not save or denote the bad data
                 }
+                
                 else 
                 {
                     //Debug.Log(arduinoMessage);
                     //send to be saved
-                    CSVManager.appendToReport(ardninoDataVals);
+                    CSVManager.appendToReport(ardninoDataVals, unityDataVals);
                 }
 
             }
@@ -132,7 +159,6 @@ public class SerialComms : MonoBehaviour
                 //time out exception
                 //Do Nothing
             }
-
         }
     }
 

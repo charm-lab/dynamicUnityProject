@@ -42,24 +42,28 @@ public class GameLogic : MonoBehaviour
 
     #region sphere-SA-TA
     /**** Create STARTINGAREA *****/
+    [Header("Starting Area Variables")]
     GameObject startingArea; //Instatiate StartingArea GameObject
     Rigidbody rigidStartingArea; //Declare rigid body on sphere
     CapsuleCollider startingAreaCollider; //This declares your Collider
     MeshRenderer startingAreaMeshRenderer; //Declares Mesh Renderer
-    float startingAreaRadius = 0.2f;
-    float startingAreaHeight;
+    public Vector3 startingAreaPosition;
+    public float startingAreaRadius = 0.2f;
+    public float startingAreaHeight;
     float startingX = 0.0f;
     float startingZ = 0.25f;
     float targetOffset = 0.50f;
 
     /**** Create TARGETAREA *****/
+    [Header("Target Area Variables")]
     GameObject targetArea; //Instatiate targetArea GameObject
     Rigidbody rigidTargetArea; //Declare rigid body on sphere
     CapsuleCollider targetAreaCollider; //This declares your Collider
     MeshRenderer targetAreaMeshRenderer; //Declares Mesh Renderer
-    float targetToSphereDist; //Distance between target and sphere
-    float targetAreaHeight;
-    float targetAreaRadius = 0.2f;
+    public Vector3 targetAreaPosition;
+    public float targetToSphereDist; //Distance between target and sphere
+    public float targetAreaHeight;
+    public float targetAreaRadius = 0.2f;
     #endregion sphere-SA-TA
 
     // Start is called before the first frame update
@@ -74,8 +78,8 @@ public class GameLogic : MonoBehaviour
         trakSTAROrigin.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
 
         indexSphere.GetComponent<MeshRenderer>().material.color = Color.red;
-        thumbSphere.GetComponent<MeshRenderer>().material.color = Color.blue;
-        trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.green;
+        thumbSphere.GetComponent<MeshRenderer>().material.color = Color.cyan;
+        trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
         indexScaling = indexSphere.transform.localScale;
         thumbScaling = thumbSphere.transform.localScale;
@@ -171,7 +175,9 @@ public class GameLogic : MonoBehaviour
         //Set Size and Initial Position
         startingAreaHeight = sphereCollider.radius * sphereScaling;
         startingArea.transform.localScale = new Vector3(startingAreaRadius, startingAreaHeight, startingAreaRadius);
-        startingArea.transform.position = new Vector3(startingX, startingAreaHeight, startingZ);
+        startingAreaPosition = new Vector3(startingX, startingAreaHeight, startingZ);
+        startingArea.transform.position = startingAreaPosition;
+
 
         //This sets the Collider radius when the GameObject collides with a trigger Collider
         startingAreaCollider = startingArea.GetComponent<CapsuleCollider>();

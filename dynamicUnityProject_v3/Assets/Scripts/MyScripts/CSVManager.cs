@@ -15,15 +15,31 @@ public static class CSVManager
     //Define the delimter
     private static string reportSeparator = ",";
     //Deifne data headers for csv file
-    private static string[] reportHeaders = new string[7]
+    private static string[] reportHeaders = new string[21]
     {
-        "Arduino desiredPos1 [mm]",
-        "Arduino desiredPos2 [mm]",
+        //Arduino Info:
         "Arduino finalPos1 [mm]",
         "Arduino finalPos2 [mm]",
         "Arduino Elapsed Time [ms]",
-        "Unity Current Time [sec]",
-        "Trial Number"
+        //Unity Info:
+        "indexPositionCommand [mm]",
+        "indexPositionX [mm]",
+        "indexPositionY [mm]",
+        "indexPositionZ [mm]",
+        "thumbPositionCommand [mm]",
+        "thumbPositionX [mm]",
+        "thumbPositionY [mm]",
+        "thumbPositionZ [mm]",
+        "spherePositionX [mm]",
+        "spherePositionY [mm]",
+        "spherePositionZ [mm]",
+        "startingAreaPositionX [mm]",
+        "startingAreaPositionY [mm]",
+        "startingAreaPositionZ [mm]",
+        "targetAreaPositionX [mm]",
+        "targetAreaPositionY [mm]",
+        "targetAreaPositionZ [mm]",
+        "CurrentTime [sec]"
     };
 
     //Header for timestamp of real-world time
@@ -32,7 +48,7 @@ public static class CSVManager
     #region FileInteractions
     //Add line to the report
     //takes in string array of data
-    public static void appendToReport(string[] strings)
+    public static void appendToReport(string[] arduinoVals, float[] unityVals)
     {
         //Check if the directory/folder is there, if not create it
         verifyDirectory();
@@ -44,7 +60,7 @@ public static class CSVManager
         {
             string finalString = "";
             //Loop through each element of the data
-            for (int i = 0; i< strings.Length; i++)
+            for (int i = 0; i< arduinoVals.Length; i++)
             {
                 //if finalString is not already written, it need the separator/delimtier added
                 if (finalString != "")
@@ -52,7 +68,17 @@ public static class CSVManager
                     finalString += reportSeparator;
                 }
                 //add data
-                finalString += strings[i];
+                finalString += arduinoVals[i];
+            }
+            for (int j = 0; j< unityVals.Length; j++)
+            {
+                //if finalString is not already written, it need the separator/delimtier added
+                if (finalString != "")
+                {
+                    finalString += reportSeparator;
+                }
+                //add data
+                finalString += unityVals[j].ToString();
             }
             //add the IRL timestamp
             finalString += reportSeparator + getIRLTimeStamp();
