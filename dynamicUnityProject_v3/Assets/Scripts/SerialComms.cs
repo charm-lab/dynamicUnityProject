@@ -43,6 +43,7 @@ public class SerialComms : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Debug.Log("SerialComms.cs");
         if (stream.IsOpen)
         {
             currentTime = Time.time;
@@ -52,7 +53,7 @@ public class SerialComms : MonoBehaviour
                 float num1 = player.GetComponent<GameLogic>().indexPositionCommand;
                 float num2 = player.GetComponent<GameLogic>().thumbPositionCommand;
                 float num3 = currentTime;
-                int num4 = 1;//gameLogic.trialNumber; // stop or trial number
+                int num4 = 1;//player.GetComponent<GameLogic>().trialNumber; // stop or trial number
 
                 string message = num1.ToString() + "A" + num2.ToString() + "B";// + num3.ToString() + "C" + num4.ToString() + "D";
                                                                                //Debug.Log(message);
@@ -102,6 +103,10 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().targetAreaRadius,
                     player.GetComponent<GameLogic>().targetAreaHeight,
                     //Trial Info
+                    player.GetComponent<GameLogic>().successCounter,
+                    player.GetComponent<GameLogic>().failCounter,
+                    player.GetComponent<GameLogic>().timeOfCurrentSuccess,
+                    player.GetComponent<GameLogic>().timeSinceLastSuccess,
                     num4
                     };
 

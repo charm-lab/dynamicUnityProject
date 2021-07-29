@@ -529,14 +529,14 @@ MonoBehaviour:
   indexDistToCenter: 0
   indexToSpherePenetration: 0
   indexForce: 0
-  indexScaleValue: 0
+  indexScaleValue: 0.04
   indexPositionCommand: 0
   thumbPosition: {x: 0, y: 0, z: 0}
   thumbOrientation: {x: 0, y: 0, z: 0}
   thumbDistToCenter: 0
   thumbToSpherePenetration: 0
   thumbForce: 0
-  thumbScaleValue: 0
+  thumbScaleValue: 0.04
   thumbPositionCommand: 0
   spherePosition: {x: 0, y: 0, z: 0}
   sphereOrientation: {x: 0, y: 0, z: 0}
@@ -549,6 +549,22 @@ MonoBehaviour:
   targetToSphereDist: 0
   targetAreaRadius: 0.2
   targetAreaHeight: 0
+  isSphereInTarget: 0
+  waypointCenterHeight: 0.15
+  waypointRadius: 0.2
+  passedWaypoint: 0
+  indexContact: 0
+  thumbContact: 0
+  heldSphereBefore: 0
+  trialNumber: 1
+  numTrials: 3
+  numElapsedTimes: 1
+  successCounter: 0
+  failCounter: 0
+  timeOfCurrentSuccess: 0
+  timeSinceLastSuccess: 0
+  timeIndex: 0
+  elapsedTimes: []
 --- !u!4 &1192714444
 Transform:
   m_ObjectHideFlags: 0

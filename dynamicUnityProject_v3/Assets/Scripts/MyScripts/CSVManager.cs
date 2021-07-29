@@ -53,6 +53,10 @@ public static class CSVManager
         "targetAreaPosition Z [mm]",
         "targetAreaRadius [m]",
         "targetAreaHerght [m]",
+        "Successes",
+        "Failures",
+        "timeOfCurrentSuccess [sec]",
+        "timeSinceLastSuccess [sec]",
         "Trial Number",
         //Arduino Info:
         "Arduino finalPos1 [mm]",
@@ -100,7 +104,7 @@ public static class CSVManager
             }
 
             //add the IRL timestamp
-            finalString += reportSeparator + getIRLTimeStamp();
+            //finalString += reportSeparator + getIRLTimeStamp();
 
             //Write data element to file
             sw.WriteLine(finalString);

@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
 
 public class GameLogic : MonoBehaviour
 {
+    #region
     GameObject indexSphere;
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
@@ -44,12 +46,12 @@ public class GameLogic : MonoBehaviour
     public float sphereScaleValue = 0.05f; //m
     public float sphereStiffness = 50.0f; //in N/m
 
-    /**** Create STARTINGAREA *****/  
+    /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
     Rigidbody rigidStartingArea; //Declare rigid body on sphere
     CapsuleCollider startingAreaCollider; //This declares your Collider
     MeshRenderer startingAreaMeshRenderer; //Declares Mesh Renderer
-    
+
     [Header("Starting Area Variables")]
     public Vector3 startingAreaPosition;
     public float startingAreaRadius = 0.2f;
@@ -63,12 +65,52 @@ public class GameLogic : MonoBehaviour
     Rigidbody rigidTargetArea; //Declare rigid body on sphere
     CapsuleCollider targetAreaCollider; //This declares your Collider
     MeshRenderer targetAreaMeshRenderer; //Declares Mesh Renderer
-    
+
     [Header("Target Area Variables")]
     public Vector3 targetAreaPosition;
     public float targetToSphereDist; //Distance between target and sphere
     public float targetAreaRadius = 0.2f;
     public float targetAreaHeight;
+    public bool isSphereInTarget = false; //Sphere in target boolean
+
+
+    /**** Create WAYPOINT *****/
+    GameObject waypoint; //Instatiate waypoint GameObject
+    Rigidbody rigidWaypoint; //Declare rigid body on waypoint
+    SphereCollider waypointCollider; //This declares your Collider
+    MeshRenderer waypointMeshRenderer; //Declares Mesh Renderer
+
+    [Header("Waypoint Variables")]
+    public float waypointCenterHeight = 0.15f; //Height of waypoint relative to floor
+    public float waypointRadius = 0.2f;
+    public bool passedWaypoint = false; //Waypoint Boolean
+    
+    /**** Trial Info *****/
+    [Header("Contact Conditions")]
+    //Contact booleans
+    public bool indexContact;
+    public bool thumbContact;
+    public bool heldSphereBefore = false;
+    
+    /**** Trial Info *****/
+    [Header("Trial Variables")]
+    public int trialNumber = 1; //the actual trial being worked on
+    public int numTrials = 3; // the total number of trials the user will participate in
+    public int numElapsedTimes = 1; //num of attempts for each trial
+    
+    public int successCounter = 0; //number of successful moves within a trial
+    public int failCounter = 0;
+
+    /**** Timing *****/
+    //use task success/fails
+    [Header("Timing")]
+    public float timeOfCurrentSuccess = 0.0f;
+    public float timeSinceLastSuccess = 0.0f;
+    
+    public int timeIndex = 0;
+    public float[] elapsedTimes;
+
+    #endregion
 
     // Start is called before the first frame update
     void Start()
@@ -89,12 +131,16 @@ public class GameLogic : MonoBehaviour
         thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
         sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
 
+        //Set up timing saving
+        elapsedTimes = new float[numElapsedTimes * numTrials];
+
         //Create the sphere Game Object
         createSphere(startingX, startingZ);
 
         //Create starting and target areas
         createStartingArea(startingX, startingZ);
         createTargetArea(startingX, startingZ);
+        createWaypoint();
     }
 
     // Update is called once per frame
@@ -102,31 +148,162 @@ public class GameLogic : MonoBehaviour
     // or adjusted for non-physics objects, simple timers
     void Update()
     {
-        spherePosition = sphere.transform.position;
-        sphereOrientation = sphere.transform.eulerAngles;
+        //Debug.Log("GameLogic.cs");
+        //Reset sphere if needed
+        if (Input.GetKey("space"))
+        {
+            resetSphere();
+        }
 
-        /*In Unity global units (may not be same as listed under trakSTAR Gameobject*/
-        indexPosition = indexSphere.transform.position;
-        indexOrientation = indexSphere.transform.eulerAngles;
-        thumbPosition = thumbSphere.transform.position;
-        thumbOrientation = thumbSphere.transform.eulerAngles;
+        //Wapyoint color
+        if (passedWaypoint)
+        {
+            //Make opaque
+            waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 1.0f));
+            waypointMeshRenderer.material.SetFloat("_Mode", 3);
+            waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
+            waypointMeshRenderer.material.renderQueue = 3000;
+        }
+        else
+        {
+            //Keep translucent
+            waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 0.5f));
+            waypointMeshRenderer.material.SetFloat("_Mode", 3);
+            waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
+            waypointMeshRenderer.material.renderQueue = 3000;
+        }
     }
 
     // FixedUpdate is called once every physics step
     // Purpose: Physics calcuations, adjusting physics/rigidbody objects
     void FixedUpdate()
     {
+        //Check Progress of trial
+        checkTrialProgress();
+
+        //Sphere Pose
+        spherePosition = sphere.transform.position;
+        sphereOrientation = sphere.transform.eulerAngles;
+
+        //Finger pose
+        /*In Unity global units (may not be same as listed under trakSTAR Gameobject*/
+        indexPosition = indexSphere.transform.position;
+        indexOrientation = indexSphere.transform.eulerAngles;
+        thumbPosition = thumbSphere.transform.position;
+        thumbOrientation = thumbSphere.transform.eulerAngles;
+
+        //Distance between centers of finger and sphere
         indexDistToCenter = Vector3.Magnitude(indexPosition - spherePosition);
         thumbDistToCenter = Vector3.Magnitude(thumbPosition - spherePosition);
 
-        indexToSpherePenetration = 0.5f * (indexScaling.x + sphereScaleValue) - indexDistToCenter;
-        thumbToSpherePenetration = 0.5f * (thumbScaling.x + sphereScaleValue) - thumbDistToCenter;
+        //Penetration of fingers into sphere
+        indexToSpherePenetration = 0.5f * (indexScaleValue + sphereScaleValue) - indexDistToCenter;
+        thumbToSpherePenetration = 0.5f * (thumbScaleValue + sphereScaleValue) - thumbDistToCenter;
 
+        //Force Calculation
         indexForce = calculateForce(indexToSpherePenetration);
         thumbForce = calculateForce(thumbToSpherePenetration);
 
+        //Derive Position Command from force calculation
         indexPositionCommand = getPositionCommand(indexForce);
         thumbPositionCommand = getPositionCommand(thumbForce);
+
+        /*****************************************************************************************/
+
+        //Check if sphere is inside of targetArea by calculating 
+        //the distance between target area center and sphere center
+        targetToSphereDist = Vector3.Magnitude(targetAreaPosition - spherePosition);
+
+        //Check if the sphere passed through the waypoint
+        checkWaypoint();
+
+        //Check if sphere is in target
+        checkIsSphereInTarget();
+
+        //Determine successes/fails
+       // trialLogic();
+
+    }
+
+    public void checkTrialProgress()
+    {
+        //Check progress on numMovesInTrial
+        if (successCounter >= numElapsedTimes)
+        {
+            //move on to next trial
+            trialNumber++;
+            successCounter = 0;
+
+            //end expriment
+            if (trialNumber > numTrials)
+            {
+                //Now the user is done with these tasks
+                trialNumber = 0;
+
+                Debug.Log("EXPERIMENT OVER!!!");
+            }
+            //create next trial
+            else
+            {
+                //Destroy old objects
+                Destroy(startingArea);
+                Destroy(targetArea);
+                Destroy(waypoint);
+
+                //create new start, target, and waypoint with increased spacing
+                createStartingArea(startingX, startingZ + 0.5f * targetOffset);
+                createTargetArea(startingX, startingZ - 0.5f * targetOffset);
+                createWaypoint();
+            }
+        }
+    }
+
+    public void trialLogic()
+    {
+        // Look at after the sphere has been picked up and the fingers have moved sufficiently away
+        // from the sphere
+        //if (heldSphereBefore == true && palmToSphereDist > HOLD_THRESHOLD)
+        //{
+            // if we are also in the target AND passed the waypoint we succeed
+            if (isSphereInTarget == true && passedWaypoint == true)
+            {
+                // SUCCESS!!!
+                //Timing:
+                timeOfCurrentSuccess = Time.time;
+                elapsedTimes[timeIndex] = timeOfCurrentSuccess - timeSinceLastSuccess;
+                timeIndex++;
+
+                timeSinceLastSuccess = timeOfCurrentSuccess;
+
+                sphereMeshRenderer.material.color = Color.green;
+                successCounter++;
+                Debug.Log("SUCCESS!!!");
+
+                //Wait for 3 seconds
+                //Thread.Sleep(3000);
+
+                //Reset Sphere
+                resetSphere();
+            }
+            // if one or both conditions fail, we missed/dropped
+            else
+            {
+                sphereMeshRenderer.material.color = Color.red;
+                failCounter++;
+                Debug.Log("FAIL!!!");
+
+                //Wait for 3 seconds
+                //Thread.Sleep(3000);
+
+                //Reset Sphere
+                resetSphere();
+            }
+        //}
+        // else {do nothing the sphere hasn't been picked up yet}
     }
 
     //Create Sphere GameObject:
@@ -167,6 +344,31 @@ public class GameLogic : MonoBehaviour
 
         /***Lock sphere location and orientation - TEMPORARY***/
         rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+    }
+
+    public void resetSphere()
+    {
+        //Reset device:
+        indexForce = calculateForce(0.0f);
+        thumbForce = calculateForce(0.0f);
+
+        //Wait for 0.5 seconds
+        Thread.Sleep(500);
+
+        //Destory the old sphere game object
+        Destroy(sphere);
+
+        //reset hold condition since this is now a new object
+        heldSphereBefore = false;
+
+        //reset waypoint check
+        passedWaypoint = false;
+
+        //reset sphere-target check
+        isSphereInTarget = false;
+
+        //create the new object in starting positition
+        createSphere(startingAreaPosition.x, startingAreaPosition.z);
     }
 
     public void createStartingArea(float startingX, float startingZ)
@@ -220,7 +422,8 @@ public class GameLogic : MonoBehaviour
         //Set Size and Initial Position
         targetAreaHeight = sphereCollider.radius * sphereScaleValue;
         targetArea.transform.localScale = new Vector3(targetAreaRadius, targetAreaHeight, targetAreaRadius);
-        targetArea.transform.position = new Vector3(startingX, targetAreaHeight, startingZ - targetOffset);
+        targetAreaPosition = new Vector3(startingX, targetAreaHeight, startingZ - targetOffset);
+        targetArea.transform.position = targetAreaPosition;
 
         //This sets the Collider radius when the GameObject collides with a trigger Collider
         targetAreaCollider = targetArea.GetComponent<CapsuleCollider>();
@@ -248,6 +451,71 @@ public class GameLogic : MonoBehaviour
         rigidTargetArea.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
+    public void createWaypoint()
+    {
+        waypoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+        //Name:
+        waypoint.name = "Waypoint";
+
+        //Set Size and Initial Position
+        waypoint.transform.localScale = new Vector3(waypointRadius, waypointRadius, waypointRadius);
+        waypoint.transform.position = new Vector3(0.0f, waypointCenterHeight, 0.5f * (startingArea.transform.position.z + targetArea.transform.position.z));
+
+        //This sets the Collider radius when the GameObject collides with a trigger Collider
+        waypointCollider = waypoint.GetComponent<SphereCollider>();
+        waypointCollider.enabled = false;
+
+        //Set mesh properties
+        waypointMeshRenderer = waypoint.GetComponent<MeshRenderer>();
+
+        //Set Color and Transparency
+        #region WaypointColor
+        waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 0.5f));
+        waypointMeshRenderer.material.SetFloat("_Mode", 3);
+        waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
+        waypointMeshRenderer.material.renderQueue = 3000;
+        #endregion WaypointColor
+
+        //Set Rigid Body dynamics
+        rigidWaypoint = waypoint.AddComponent<Rigidbody>();
+        rigidWaypoint.isKinematic = false;
+        rigidWaypoint.useGravity = false;
+
+        /***Lock location and orientation***/
+        rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+    }
+
+    public bool checkWaypoint()
+    {
+        //check if sphere is in waypoint
+        if (Vector3.Magnitude(waypoint.transform.position - spherePosition) < 0.5f * waypointRadius - 0.5f * sphereScaleValue)
+        {
+            passedWaypoint = true;
+        }
+        else
+        {
+            //passedWaypoint = false;
+        }
+
+        return passedWaypoint;
+    }
+
+    public bool checkIsSphereInTarget()
+    {
+        if ((targetToSphereDist <= 0.5f * targetAreaRadius - 0.5f * sphereScaleValue) && (spherePosition.y <= 0.5f * sphereScaleValue))
+        {
+            isSphereInTarget = true;
+        }
+        else
+        {
+            isSphereInTarget = false;
+        }
+        return isSphereInTarget;
+    }
+
     public float calculateForce(float penetration)
     {
         //there should be no force in a direction
@@ -268,18 +536,17 @@ public class GameLogic : MonoBehaviour
     public float getIndexForce()
     {
         return indexForce;
-    }   
-    
+    }
+
     public float getThumbForce()
     {
         return thumbForce;
     }
-    
+
     public float getPositionCommand(float force)
     {
         /*penetration value in mm*/
         return 1000 * (force / sphereStiffness);
     }
-
 
 }
