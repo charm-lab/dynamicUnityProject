@@ -52,31 +52,58 @@ public class SerialComms : MonoBehaviour
                 float num1 = player.GetComponent<GameLogic>().indexPositionCommand;
                 float num2 = player.GetComponent<GameLogic>().thumbPositionCommand;
                 float num3 = currentTime;
-                int num4 = 0;//gameLogic.trialNumber; // stop or trial number
+                int num4 = 1;//gameLogic.trialNumber; // stop or trial number
 
                 string message = num1.ToString() + "A" + num2.ToString() + "B";// + num3.ToString() + "C" + num4.ToString() + "D";
-                //Debug.Log(message);
+                                                                               //Debug.Log(message);
 
                 //Prep Unity variables for saving
-                
-                unityDataVals = new float[] {num1,
-                    player.GetComponent<GameLogic>().indexSpherePosition.x,
-                    player.GetComponent<GameLogic>().indexSpherePosition.y,
-                    player.GetComponent<GameLogic>().indexSpherePosition.z,
+
+                unityDataVals = new float[] {
+                    //Unity runtime
+                    currentTime,
+                    //Index Info
+                    num1,
+                    player.GetComponent<GameLogic>().indexPosition.x,
+                    player.GetComponent<GameLogic>().indexPosition.y,
+                    player.GetComponent<GameLogic>().indexPosition.z,
+                    player.GetComponent<GameLogic>().indexOrientation.x,
+                    player.GetComponent<GameLogic>().indexOrientation.y,
+                    player.GetComponent<GameLogic>().indexOrientation.z,
+                    player.GetComponent<GameLogic>().indexScaleValue,
+                    //Thumb Info
                     num2,
-                    player.GetComponent<GameLogic>().thumbSpherePosition.x,
-                    player.GetComponent<GameLogic>().thumbSpherePosition.y,
-                    player.GetComponent<GameLogic>().thumbSpherePosition.z,
+                    player.GetComponent<GameLogic>().thumbPosition.x,
+                    player.GetComponent<GameLogic>().thumbPosition.y,
+                    player.GetComponent<GameLogic>().thumbPosition.z,
+                    player.GetComponent<GameLogic>().thumbOrientation.x,
+                    player.GetComponent<GameLogic>().thumbOrientation.y,
+                    player.GetComponent<GameLogic>().thumbOrientation.z,
+                    player.GetComponent<GameLogic>().thumbScaleValue,
+                    //Sphere Info
                     player.GetComponent<GameLogic>().spherePosition.x,
                     player.GetComponent<GameLogic>().spherePosition.y,
                     player.GetComponent<GameLogic>().spherePosition.z,
+                    player.GetComponent<GameLogic>().sphereOrientation.x,
+                    player.GetComponent<GameLogic>().sphereOrientation.y,
+                    player.GetComponent<GameLogic>().sphereOrientation.z,
+                    player.GetComponent<GameLogic>().sphereScaleValue,
+                    player.GetComponent<GameLogic>().sphereStiffness,
+                    //Start Area Info
                     player.GetComponent<GameLogic>().startingAreaPosition.x,
                     player.GetComponent<GameLogic>().startingAreaPosition.y,
                     player.GetComponent<GameLogic>().startingAreaPosition.z,
+                    player.GetComponent<GameLogic>().startingAreaRadius,
+                    player.GetComponent<GameLogic>().startingAreaHeight,
+                    //Target Area Info
                     player.GetComponent<GameLogic>().targetAreaPosition.x,
                     player.GetComponent<GameLogic>().targetAreaPosition.y,
                     player.GetComponent<GameLogic>().targetAreaPosition.z,
-                    currentTime };
+                    player.GetComponent<GameLogic>().targetAreaRadius,
+                    player.GetComponent<GameLogic>().targetAreaHeight,
+                    //Trial Info
+                    num4
+                    };
 
                 //Write to Arudino via serial
                 writeSerial(message);
@@ -96,6 +123,7 @@ public class SerialComms : MonoBehaviour
                 //Debug.Log("Back from Arduino");
                 lastTime = currentTime;
 
+                #region
                 /*
                 if (Input.GetKey("0") || (player.trialNumber == 0))
                 {
@@ -109,7 +137,7 @@ public class SerialComms : MonoBehaviour
                     //Application.Quit(); //Quits game when not in editor (after built project)
                 }
                 */
-
+                #endregion
             }
         }
     }

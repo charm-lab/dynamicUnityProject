@@ -15,31 +15,49 @@ public static class CSVManager
     //Define the delimter
     private static string reportSeparator = ",";
     //Deifne data headers for csv file
-    private static string[] reportHeaders = new string[21]
+    private static string[] reportHeaders = new string[]
     {
+        //Unity Info:
+        "CurrentTime [sec]",
+        "indexPositionCommand (1-DoF) [mm]",
+        "indexPosition X [mm]",
+        "indexPosition Y [mm]",
+        "indexPosition Z [mm]",
+        "indexOrientation X [deg]",
+        "indexOrientation Y [deg]",
+        "indexOrientation Z [deg]",
+        "indexScaleValue [m]",
+        "thumbPositionCommand (1-DoF) [mm]",
+        "thumbPosition X [mm]",
+        "thumbPosition Y [mm]",
+        "thumbPosition Z [mm]",
+        "thumbOrientation X [deg]",
+        "thumbOrientation Y [deg]",
+        "thumbOrientation Z [deg]",
+        "thumbScaleValue [m]",
+        "spherePosition X [mm]",
+        "spherePosition Y [mm]",
+        "spherePosition Z [mm]",
+        "sphereOrientation X [deg]",
+        "sphereOrientation Y [deg]",
+        "sphereOrientation Z [deg]",
+        "sphereScaleValue [m]",
+        "sphereStiffness [N/m]",
+        "startingAreaPosition X [mm]",
+        "startingAreaPosition Y [mm]",
+        "startingAreaPosition Z [mm]",
+        "startingAreaRadius [m]",
+        "startingAreaHeight [m]",
+        "targetAreaPosition X [mm]",
+        "targetAreaPosition Y [mm]",
+        "targetAreaPosition Z [mm]",
+        "targetAreaRadius [m]",
+        "targetAreaHerght [m]",
+        "Trial Number",
         //Arduino Info:
         "Arduino finalPos1 [mm]",
         "Arduino finalPos2 [mm]",
-        "Arduino Elapsed Time [ms]",
-        //Unity Info:
-        "indexPositionCommand [mm]",
-        "indexPositionX [mm]",
-        "indexPositionY [mm]",
-        "indexPositionZ [mm]",
-        "thumbPositionCommand [mm]",
-        "thumbPositionX [mm]",
-        "thumbPositionY [mm]",
-        "thumbPositionZ [mm]",
-        "spherePositionX [mm]",
-        "spherePositionY [mm]",
-        "spherePositionZ [mm]",
-        "startingAreaPositionX [mm]",
-        "startingAreaPositionY [mm]",
-        "startingAreaPositionZ [mm]",
-        "targetAreaPositionX [mm]",
-        "targetAreaPositionY [mm]",
-        "targetAreaPositionZ [mm]",
-        "CurrentTime [sec]"
+        "Arduino Elapsed Time [ms]"
     };
 
     //Header for timestamp of real-world time
@@ -60,7 +78,17 @@ public static class CSVManager
         {
             string finalString = "";
             //Loop through each element of the data
-            for (int i = 0; i< arduinoVals.Length; i++)
+            for (int i = 0; i < unityVals.Length; i++)
+            {
+                //if finalString is not already written, it need the separator/delimtier added
+                if (finalString != "")
+                {
+                    finalString += reportSeparator;
+                }
+                //add data
+                finalString += unityVals[i].ToString();
+            }
+            for (int i = 0; i < arduinoVals.Length; i++)
             {
                 //if finalString is not already written, it need the separator/delimtier added
                 if (finalString != "")
@@ -70,16 +98,7 @@ public static class CSVManager
                 //add data
                 finalString += arduinoVals[i];
             }
-            for (int j = 0; j< unityVals.Length; j++)
-            {
-                //if finalString is not already written, it need the separator/delimtier added
-                if (finalString != "")
-                {
-                    finalString += reportSeparator;
-                }
-                //add data
-                finalString += unityVals[j].ToString();
-            }
+
             //add the IRL timestamp
             finalString += reportSeparator + getIRLTimeStamp();
 
@@ -109,7 +128,7 @@ public static class CSVManager
                 }
                 //add header
                 finalString += reportHeaders[i];
-             }
+            }
             //add the IRL timestamp header
             finalString += reportSeparator + irlTimeStampHeader;
 
@@ -129,10 +148,10 @@ public static class CSVManager
         //make string representing directory/folder path 
         string dir = getDirectoryPath();
 
-        if(!Directory.Exists(dir))
+        if (!Directory.Exists(dir))
         {
             //create Directory if one doesn't already exist
-            Directory.CreateDirectory(dir);          
+            Directory.CreateDirectory(dir);
         }
     }
 
@@ -142,7 +161,7 @@ public static class CSVManager
         //make string representing file path 
         string file = getFilePath();
 
-        if(!File.Exists(file))
+        if (!File.Exists(file))
         {
             //create file for data if one doesn't already exist
             createReport();

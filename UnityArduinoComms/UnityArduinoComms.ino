@@ -40,9 +40,9 @@ double unityCurrentTime;
 double trialNumber = 1; //default
 
 /*Arudino Timing*/
-double startTime;
-double currentTime;
-double arduinoElapsedTime;
+unsigned long startTime;
+unsigned long currentTime;
+unsigned long arduinoElapsedTime;
 
 /********************************************************
    Function setup

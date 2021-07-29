@@ -9,19 +9,23 @@ public class GameLogic : MonoBehaviour
     GameObject trakSTAROrigin;
 
     [Header("Index Variables")]
-    public Vector3 indexSpherePosition;
+    public Vector3 indexPosition;
+    public Vector3 indexOrientation;
     public float indexDistToCenter;
     public float indexToSpherePenetration;
     public float indexForce;
+    public float indexScaleValue = 0.04f;  //m
     Vector3 indexScaling;
 
     public float indexPositionCommand;
 
     [Header("Thumb Variables")]
-    public Vector3 thumbSpherePosition;
+    public Vector3 thumbPosition;
+    public Vector3 thumbOrientation;
     public float thumbDistToCenter;
     public float thumbToSpherePenetration;
     public float thumbForce;
+    public float thumbScaleValue = 0.04f; //m
     Vector3 thumbScaling;
 
     public float thumbPositionCommand;
@@ -32,21 +36,21 @@ public class GameLogic : MonoBehaviour
     SphereCollider sphereCollider; //This declares your SphereCollider
     MeshRenderer sphereMeshRenderer; //Declares Mesh Renderer
                                      //Sphere Scaling and Stiffness
-
-    Vector3 sphereScalingV;
+    Vector3 sphereScaling;
 
     [Header("Sphere Variables")]
     public Vector3 spherePosition;
-    float sphereScaling = 0.05f; //m
-    float sphereStiffness = 50.0f; //in N/m
+    public Vector3 sphereOrientation;
+    public float sphereScaleValue = 0.05f; //m
+    public float sphereStiffness = 50.0f; //in N/m
 
-    #region sphere-SA-TA
-    /**** Create STARTINGAREA *****/
-    [Header("Starting Area Variables")]
+    /**** Create STARTINGAREA *****/  
     GameObject startingArea; //Instatiate StartingArea GameObject
     Rigidbody rigidStartingArea; //Declare rigid body on sphere
     CapsuleCollider startingAreaCollider; //This declares your Collider
     MeshRenderer startingAreaMeshRenderer; //Declares Mesh Renderer
+    
+    [Header("Starting Area Variables")]
     public Vector3 startingAreaPosition;
     public float startingAreaRadius = 0.2f;
     public float startingAreaHeight;
@@ -55,16 +59,16 @@ public class GameLogic : MonoBehaviour
     float targetOffset = 0.50f;
 
     /**** Create TARGETAREA *****/
-    [Header("Target Area Variables")]
     GameObject targetArea; //Instatiate targetArea GameObject
     Rigidbody rigidTargetArea; //Declare rigid body on sphere
     CapsuleCollider targetAreaCollider; //This declares your Collider
     MeshRenderer targetAreaMeshRenderer; //Declares Mesh Renderer
+    
+    [Header("Target Area Variables")]
     public Vector3 targetAreaPosition;
     public float targetToSphereDist; //Distance between target and sphere
-    public float targetAreaHeight;
     public float targetAreaRadius = 0.2f;
-    #endregion sphere-SA-TA
+    public float targetAreaHeight;
 
     // Start is called before the first frame update
     void Start()
@@ -81,9 +85,9 @@ public class GameLogic : MonoBehaviour
         thumbSphere.GetComponent<MeshRenderer>().material.color = Color.cyan;
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
-        indexScaling = indexSphere.transform.localScale;
-        thumbScaling = thumbSphere.transform.localScale;
-        sphereScalingV = new Vector3(0.05f, 0.05f, 0.05f);
+        indexScaling = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
+        thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
+        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
 
         //Create the sphere Game Object
         createSphere(startingX, startingZ);
@@ -91,7 +95,6 @@ public class GameLogic : MonoBehaviour
         //Create starting and target areas
         createStartingArea(startingX, startingZ);
         createTargetArea(startingX, startingZ);
-
     }
 
     // Update is called once per frame
@@ -100,28 +103,30 @@ public class GameLogic : MonoBehaviour
     void Update()
     {
         spherePosition = sphere.transform.position;
+        sphereOrientation = sphere.transform.eulerAngles;
 
         /*In Unity global units (may not be same as listed under trakSTAR Gameobject*/
-        indexSpherePosition = indexSphere.transform.position;
-        thumbSpherePosition = thumbSphere.transform.position;
+        indexPosition = indexSphere.transform.position;
+        indexOrientation = indexSphere.transform.eulerAngles;
+        thumbPosition = thumbSphere.transform.position;
+        thumbOrientation = thumbSphere.transform.eulerAngles;
     }
 
     // FixedUpdate is called once every physics step
     // Purpose: Physics calcuations, adjusting physics/rigidbody objects
     void FixedUpdate()
     {
-        indexDistToCenter = Vector3.Magnitude(indexSpherePosition - spherePosition);
-        thumbDistToCenter = Vector3.Magnitude(thumbSpherePosition - spherePosition);
+        indexDistToCenter = Vector3.Magnitude(indexPosition - spherePosition);
+        thumbDistToCenter = Vector3.Magnitude(thumbPosition - spherePosition);
 
-        indexToSpherePenetration = 0.5f * (indexScaling.x + sphereScaling) - indexDistToCenter;
-        thumbToSpherePenetration = 0.5f * (thumbScaling.x + sphereScaling) - thumbDistToCenter;
+        indexToSpherePenetration = 0.5f * (indexScaling.x + sphereScaleValue) - indexDistToCenter;
+        thumbToSpherePenetration = 0.5f * (thumbScaling.x + sphereScaleValue) - thumbDistToCenter;
 
         indexForce = calculateForce(indexToSpherePenetration);
         thumbForce = calculateForce(thumbToSpherePenetration);
 
         indexPositionCommand = getPositionCommand(indexForce);
         thumbPositionCommand = getPositionCommand(thumbForce);
-
     }
 
     //Create Sphere GameObject:
@@ -134,7 +139,7 @@ public class GameLogic : MonoBehaviour
         sphere.name = "Sphere";
 
         //Set Size and Initial Position
-        sphere.transform.localScale = new Vector3(sphereScaling, sphereScaling, sphereScaling);
+        sphere.transform.localScale = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
         sphere.transform.position = new Vector3(0.3f, 0.025f, startingZ);
         //sphere.transform.position = new Vector3(startingX, 1.0f, startingZ);
 
@@ -173,11 +178,10 @@ public class GameLogic : MonoBehaviour
         startingArea.name = "StartingArea";
 
         //Set Size and Initial Position
-        startingAreaHeight = sphereCollider.radius * sphereScaling;
+        startingAreaHeight = sphereCollider.radius * sphereScaleValue;
         startingArea.transform.localScale = new Vector3(startingAreaRadius, startingAreaHeight, startingAreaRadius);
         startingAreaPosition = new Vector3(startingX, startingAreaHeight, startingZ);
         startingArea.transform.position = startingAreaPosition;
-
 
         //This sets the Collider radius when the GameObject collides with a trigger Collider
         startingAreaCollider = startingArea.GetComponent<CapsuleCollider>();
@@ -214,7 +218,7 @@ public class GameLogic : MonoBehaviour
         targetArea.name = "TargetArea";
 
         //Set Size and Initial Position
-        targetAreaHeight = sphereCollider.radius * sphereScaling;
+        targetAreaHeight = sphereCollider.radius * sphereScaleValue;
         targetArea.transform.localScale = new Vector3(targetAreaRadius, targetAreaHeight, targetAreaRadius);
         targetArea.transform.position = new Vector3(startingX, targetAreaHeight, startingZ - targetOffset);
 
@@ -265,6 +269,7 @@ public class GameLogic : MonoBehaviour
     {
         return indexForce;
     }   
+    
     public float getThumbForce()
     {
         return thumbForce;
