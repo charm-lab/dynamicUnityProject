@@ -19,10 +19,12 @@ public class SerialComms : MonoBehaviour
     public static string[] ardninoDataVals;
     public static float[] unityDataVals;
 
+    public int expectedUnityEntries;
+
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Start Serial Comms");
+        //Debug.Log("Start Serial Comms");
 
         //Start the hand behavior/game logic as disabled until serial comms is up
         player = GameObject.Find("Player");
@@ -30,6 +32,7 @@ public class SerialComms : MonoBehaviour
         //Define and open serial port       
         stream = new SerialPort(portName, 9600);
         stream.Open();
+        Debug.Log("Serial Communication Established");
 
         //Serial Port Read and Write Timeouts
         stream.ReadTimeout = 5;
@@ -55,8 +58,8 @@ public class SerialComms : MonoBehaviour
                 float num3 = currentTime;
                 int num4 = 1;//player.GetComponent<GameLogic>().trialNumber; // stop or trial number
 
-                string message = num1.ToString() + "A" + num2.ToString() + "B";// + num3.ToString() + "C" + num4.ToString() + "D";
-                                                                               //Debug.Log(message);
+                string message = num1.ToString("0.00") + "A" + num2.ToString("0.00") + "B";// + num3.ToString() + "C" + num4.ToString() + "D";
+                                                                                           //Debug.Log(message);
 
                 //Prep Unity variables for saving
 
@@ -109,6 +112,8 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().timeSinceLastSuccess,
                     num4
                     };
+
+                expectedUnityEntries = unityDataVals.Length;
 
                 //Write to Arudino via serial
                 writeSerial(message);
@@ -166,22 +171,65 @@ public class SerialComms : MonoBehaviour
         {
             try
             {
+                //Assume data is valid
+                bool dataIsValid = true;
+
                 //read stuff
                 string arduinoMessage = stream.ReadLine();
                 ardninoDataVals = arduinoMessage.Split(',');
 
-                //Debug.Log(arduinoMessage);
-                //Debug.Log(ardninoDataVals.Length);
-
-                
-                if (ardninoDataVals.Length != 3)
+                /** TEST THE DATA VALIDITY **/
+                /*
+                if (ardninoDataVals == null || unityDataVals == null)
                 {
-                    //Data is invalid - do not save or denote the bad data
+                    //Data is invalid - do not save or denote the bad data                    
+                    dataIsValid = false;
+
+                }
+                */
+                //Check that there are even enough values in the to be saved
+                if (ardninoDataVals.Length != 3 || unityDataVals.Length != expectedUnityEntries)
+                {
+                    //Data is invalid - do not save or denote the bad data                    
+                    dataIsValid = false;            
                 }
                 
-                else 
+                /*
+                //Check that all unity values are real numbers
+                for (int i = 0; i < unityDataVals.Length; i++)
                 {
-                    //Debug.Log(arduinoMessage);
+
+                    if (float.IsNaN(unityDataVals[i]))
+                    {
+                        dataIsValid = false;
+                        break;
+                    }
+                }
+                */
+                //Check if ? are in data 
+                for (int i = 0; i < ardninoDataVals.Length; i++)
+                {
+                    if (ardninoDataVals[i].Contains("?"))
+                    {
+                        dataIsValid = false;
+                        break;
+                    }
+
+                    /*
+                    float tempFloat = float.Parse(ardninoDataVals[i]);
+                    if (float.IsNaN(tempFloat))
+                    {
+                        dataIsValid = false;
+                    }
+                    */
+                }
+
+                //If the boolean is still true after all the checks, save the data
+                if (dataIsValid == true)
+                {
+                    //Debug.Log("Arduino Message: " + arduinoMessage + "\nLength: " + (ardninoDataVals.Length).ToString());
+                    //Debug.Log("Unity Message: " + unityDataVals.ToString() + "\nLength: " + (unityDataVals.Length).ToString());
+
                     //send to be saved
                     CSVManager.appendToReport(ardninoDataVals, unityDataVals);
                 }

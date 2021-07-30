@@ -16,7 +16,7 @@ public class GameLogic : MonoBehaviour
     public float indexDistToCenter;
     public float indexToSpherePenetration;
     public float indexForce;
-    public float indexScaleValue = 0.04f;  //m
+    public float indexScaleValue = 0.01f;  //m
     Vector3 indexScaling;
 
     public float indexPositionCommand;
@@ -27,7 +27,7 @@ public class GameLogic : MonoBehaviour
     public float thumbDistToCenter;
     public float thumbToSpherePenetration;
     public float thumbForce;
-    public float thumbScaleValue = 0.04f; //m
+    public float thumbScaleValue = 0.01f; //m
     Vector3 thumbScaling;
 
     public float thumbPositionCommand;
@@ -56,9 +56,9 @@ public class GameLogic : MonoBehaviour
     public Vector3 startingAreaPosition;
     public float startingAreaRadius = 0.2f;
     public float startingAreaHeight;
-    float startingX = 0.0f;
-    float startingZ = 0.25f;
-    float targetOffset = 0.50f;
+    float startingX = 0.3f;
+    float startingZ = 0.2f;
+    float targetOffset = 0.40f;
 
     /**** Create TARGETAREA *****/
     GameObject targetArea; //Instatiate targetArea GameObject
@@ -82,7 +82,7 @@ public class GameLogic : MonoBehaviour
 
     [Header("Waypoint Variables")]
     public float waypointCenterHeight = 0.15f; //Height of waypoint relative to floor
-    public float waypointRadius = 0.2f;
+    public float waypointRadius = 0.15f;
     public bool passedWaypoint = false; //Waypoint Boolean
     
     /**** Trial Info *****/
@@ -140,7 +140,7 @@ public class GameLogic : MonoBehaviour
         //Create starting and target areas
         createStartingArea(startingX, startingZ);
         createTargetArea(startingX, startingZ);
-        createWaypoint();
+        createWaypoint(startingX);
     }
 
     // Update is called once per frame
@@ -257,7 +257,7 @@ public class GameLogic : MonoBehaviour
                 //create new start, target, and waypoint with increased spacing
                 createStartingArea(startingX, startingZ + 0.5f * targetOffset);
                 createTargetArea(startingX, startingZ - 0.5f * targetOffset);
-                createWaypoint();
+                createWaypoint(startingX);
             }
         }
     }
@@ -317,8 +317,7 @@ public class GameLogic : MonoBehaviour
 
         //Set Size and Initial Position
         sphere.transform.localScale = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
-        sphere.transform.position = new Vector3(0.3f, 0.025f, startingZ);
-        //sphere.transform.position = new Vector3(startingX, 1.0f, startingZ);
+        sphere.transform.position = new Vector3(startingX, 0.5f * sphereScaleValue, startingZ);
 
         //This sets the Collider radius when the GameObject collides with a trigger Collider
         sphereCollider = sphere.GetComponent<SphereCollider>();
@@ -338,12 +337,12 @@ public class GameLogic : MonoBehaviour
         rigidSphere = sphere.AddComponent<Rigidbody>();
         rigidSphere.isKinematic = false;
         rigidSphere.useGravity = true;
-        rigidSphere.mass = 1.0f;
-        rigidSphere.drag = 1.0f;
-        rigidSphere.angularDrag = 1.0f;
+        rigidSphere.mass = 15.0f;
+        rigidSphere.drag = 10.0f;
+        rigidSphere.angularDrag = 10.0f;
 
         /***Lock sphere location and orientation - TEMPORARY***/
-        rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+        //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public void resetSphere()
@@ -451,7 +450,7 @@ public class GameLogic : MonoBehaviour
         rigidTargetArea.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
-    public void createWaypoint()
+    public void createWaypoint(float startingX)
     {
         waypoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 
@@ -460,7 +459,7 @@ public class GameLogic : MonoBehaviour
 
         //Set Size and Initial Position
         waypoint.transform.localScale = new Vector3(waypointRadius, waypointRadius, waypointRadius);
-        waypoint.transform.position = new Vector3(0.0f, waypointCenterHeight, 0.5f * (startingArea.transform.position.z + targetArea.transform.position.z));
+        waypoint.transform.position = new Vector3(startingX, waypointCenterHeight, 0.5f * (startingArea.transform.position.z + targetArea.transform.position.z));
 
         //This sets the Collider radius when the GameObject collides with a trigger Collider
         waypointCollider = waypoint.GetComponent<SphereCollider>();

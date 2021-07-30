@@ -92,15 +92,15 @@ public static class CSVManager
                 //add data
                 finalString += unityVals[i].ToString();
             }
-            for (int i = 0; i < arduinoVals.Length; i++)
+            for (int j = 0; j < arduinoVals.Length; j++)
             {
                 //if finalString is not already written, it need the separator/delimtier added
                 if (finalString != "")
                 {
                     finalString += reportSeparator;
                 }
-                //add data
-                finalString += arduinoVals[i];
+                //add data and ensure arduino data goes after unity data
+                finalString += arduinoVals[j];
             }
 
             //add the IRL timestamp
@@ -134,7 +134,7 @@ public static class CSVManager
                 finalString += reportHeaders[i];
             }
             //add the IRL timestamp header
-            finalString += reportSeparator + irlTimeStampHeader;
+            //finalString += reportSeparator + irlTimeStampHeader;
 
             //Write header line to file
             sw.WriteLine(finalString);
