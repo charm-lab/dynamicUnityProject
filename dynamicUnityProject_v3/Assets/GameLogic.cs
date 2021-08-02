@@ -10,6 +10,8 @@ public class GameLogic : MonoBehaviour
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
 
+    float[] forceValues;
+
     [Header("Index Variables")]
     public Vector3 indexPosition;
     public Vector3 indexOrientation;
@@ -84,20 +86,20 @@ public class GameLogic : MonoBehaviour
     public float waypointCenterHeight = 0.15f; //Height of waypoint relative to floor
     public float waypointRadius = 0.15f;
     public bool passedWaypoint = false; //Waypoint Boolean
-    
+
     /**** Trial Info *****/
     [Header("Contact Conditions")]
     //Contact booleans
     public bool indexContact;
     public bool thumbContact;
     public bool heldSphereBefore = false;
-    
+
     /**** Trial Info *****/
     [Header("Trial Variables")]
     public int trialNumber = 1; //the actual trial being worked on
     public int numTrials = 3; // the total number of trials the user will participate in
     public int numElapsedTimes = 1; //num of attempts for each trial
-    
+
     public int successCounter = 0; //number of successful moves within a trial
     public int failCounter = 0;
 
@@ -106,7 +108,7 @@ public class GameLogic : MonoBehaviour
     [Header("Timing")]
     public float timeOfCurrentSuccess = 0.0f;
     public float timeSinceLastSuccess = 0.0f;
-    
+
     public int timeIndex = 0;
     public float[] elapsedTimes;
 
@@ -205,8 +207,9 @@ public class GameLogic : MonoBehaviour
         thumbToSpherePenetration = 0.5f * (thumbScaleValue + sphereScaleValue) - thumbDistToCenter;
 
         //Force Calculation
-        indexForce = calculateForce(indexToSpherePenetration);
-        thumbForce = calculateForce(thumbToSpherePenetration);
+        forceValues = calculateForceValues(indexToSpherePenetration, thumbToSpherePenetration, trialNumber);
+        indexForce = forceValues[0];
+        thumbForce = forceValues[1];
 
         //Derive Position Command from force calculation
         indexPositionCommand = getPositionCommand(indexForce);
@@ -225,7 +228,7 @@ public class GameLogic : MonoBehaviour
         checkIsSphereInTarget();
 
         //Determine successes/fails
-       // trialLogic();
+        // trialLogic();
 
     }
 
@@ -242,7 +245,7 @@ public class GameLogic : MonoBehaviour
             if (trialNumber > numTrials)
             {
                 //Now the user is done with these tasks
-                trialNumber = 0;
+                trialNumber = -1;
 
                 Debug.Log("EXPERIMENT OVER!!!");
             }
@@ -268,40 +271,40 @@ public class GameLogic : MonoBehaviour
         // from the sphere
         //if (heldSphereBefore == true && palmToSphereDist > HOLD_THRESHOLD)
         //{
-            // if we are also in the target AND passed the waypoint we succeed
-            if (isSphereInTarget == true && passedWaypoint == true)
-            {
-                // SUCCESS!!!
-                //Timing:
-                timeOfCurrentSuccess = Time.time;
-                elapsedTimes[timeIndex] = timeOfCurrentSuccess - timeSinceLastSuccess;
-                timeIndex++;
+        // if we are also in the target AND passed the waypoint we succeed
+        if (isSphereInTarget == true && passedWaypoint == true)
+        {
+            // SUCCESS!!!
+            //Timing:
+            timeOfCurrentSuccess = Time.time;
+            elapsedTimes[timeIndex] = timeOfCurrentSuccess - timeSinceLastSuccess;
+            timeIndex++;
 
-                timeSinceLastSuccess = timeOfCurrentSuccess;
+            timeSinceLastSuccess = timeOfCurrentSuccess;
 
-                sphereMeshRenderer.material.color = Color.green;
-                successCounter++;
-                Debug.Log("SUCCESS!!!");
+            sphereMeshRenderer.material.color = Color.green;
+            successCounter++;
+            Debug.Log("SUCCESS!!!");
 
-                //Wait for 3 seconds
-                //Thread.Sleep(3000);
+            //Wait for 3 seconds
+            //Thread.Sleep(3000);
 
-                //Reset Sphere
-                resetSphere();
-            }
-            // if one or both conditions fail, we missed/dropped
-            else
-            {
-                sphereMeshRenderer.material.color = Color.red;
-                failCounter++;
-                Debug.Log("FAIL!!!");
+            //Reset Sphere
+            resetSphere();
+        }
+        // if one or both conditions fail, we missed/dropped
+        else
+        {
+            sphereMeshRenderer.material.color = Color.red;
+            failCounter++;
+            Debug.Log("FAIL!!!");
 
-                //Wait for 3 seconds
-                //Thread.Sleep(3000);
+            //Wait for 3 seconds
+            //Thread.Sleep(3000);
 
-                //Reset Sphere
-                resetSphere();
-            }
+            //Reset Sphere
+            resetSphere();
+        }
         //}
         // else {do nothing the sphere hasn't been picked up yet}
     }
@@ -348,8 +351,8 @@ public class GameLogic : MonoBehaviour
     public void resetSphere()
     {
         //Reset device:
-        indexForce = calculateForce(0.0f);
-        thumbForce = calculateForce(0.0f);
+        indexForce = 0.0f;
+        thumbForce = 0.0f;
 
         //Wait for 0.5 seconds
         Thread.Sleep(500);
@@ -515,32 +518,136 @@ public class GameLogic : MonoBehaviour
         return isSphereInTarget;
     }
 
-    public float calculateForce(float penetration)
+    public float[] calculateForceValues(float indexPenetration, float thumbPenetration, int trialNumber)
     {
-        //there should be no force in a direction
-        //if the penetration is negative or 0
-        //(signifying no contact from that direction)
-        if (penetration <= 0.0f)
+        float dorsalVal;
+        float ventralVal;
+
+        /*Condition 0: No Haptic Feebdack*/
+        if (trialNumber == 0)
         {
-            return 0.0f;
+            dorsalVal = 0.0f;
+            ventralVal = 0.0f;
         }
+
+        /*Condition 1: Index --> Dorsal | Thumb --> Ventral*/
+        else if (trialNumber == 1)
+        {
+            //there should be no force in a direction
+            //if the penetration is negative or 0
+            //(signifying no contact from that direction)
+            if (indexPenetration <= 0.0f)
+            {
+                dorsalVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                dorsalVal = sphereStiffness * indexPenetration;
+            }
+
+            if (thumbPenetration <= 0.0f)
+            {
+                ventralVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                ventralVal = sphereStiffness * thumbPenetration;
+            }
+        }
+
+        /*Condition 2: Index --> Ventral | Thumb --> Dorsal*/
+        else if (trialNumber == 2)
+        {
+            if (indexPenetration <= 0.0f)
+            {
+                ventralVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                ventralVal = sphereStiffness * indexPenetration;
+            }
+
+            if (thumbPenetration <= 0.0f)
+            {
+                dorsalVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                dorsalVal = sphereStiffness * thumbPenetration;
+            }
+        }
+
+        /*Condition 3: Single Tactor Feedback to Index Finger on Dorsal Side*/
+        else if (trialNumber == 3)
+        {
+            if (indexPenetration <= 0.0f)
+            {
+                dorsalVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                dorsalVal = sphereStiffness * indexPenetration;
+            }
+
+            ventralVal = 0.0f;
+        }
+
+        /*Condition 4: Average of both finger forces to single tactor on dorsal side*/
+        else if (trialNumber == 4)
+        {
+            if (indexPenetration <= 0.0f)
+            {
+                dorsalVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                dorsalVal = sphereStiffness * indexPenetration;
+            }
+
+            if (thumbPenetration <= 0.0f)
+            {
+                ventralVal = 0.0f;
+            }
+            else
+            {
+                //Use Hooke's Law to find force
+                ventralVal = sphereStiffness * thumbPenetration;
+                ventralVal = 0.5f * (ventralVal + dorsalVal);
+            }
+
+            ventralVal = 0.0f;
+        }
+
+        /*Experiment over*/
         else
         {
-            //Don't change value
+            dorsalVal = 0.0f;
+            ventralVal = 0.0f;
         }
-        //Use Hooke's Law to find force
-        return sphereStiffness * penetration;
+
+        forceValues[0] = dorsalVal;
+        forceValues[1] = ventralVal;
+        return forceValues;
+
     }
 
-    public float getIndexForce()
-    {
-        return indexForce;
-    }
+    #region
+    //public float getIndexForce()
+    //{
+    //    return indexForce;
+    //}
 
-    public float getThumbForce()
-    {
-        return thumbForce;
-    }
+    //public float getThumbForce()
+    //{
+    //    return thumbForce;
+    //}
+    #endregion
 
     public float getPositionCommand(float force)
     {
