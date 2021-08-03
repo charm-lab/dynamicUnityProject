@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
+using Leap;
+using Leap.Unity;
+using Leap.Unity.Interaction;
+
 
 public class GameLogic : MonoBehaviour
 {
@@ -10,7 +14,7 @@ public class GameLogic : MonoBehaviour
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
 
-    float[] forceValues;
+    public float[] forceValues;
 
     [Header("Index Variables")]
     public Vector3 indexPosition;
@@ -18,7 +22,7 @@ public class GameLogic : MonoBehaviour
     public float indexDistToCenter;
     public float indexToSpherePenetration;
     public float indexForce;
-    public float indexScaleValue = 0.01f;  //m
+    public float indexScaleValue = 0.04f;  //m
     Vector3 indexScaling;
 
     public float indexPositionCommand;
@@ -29,7 +33,7 @@ public class GameLogic : MonoBehaviour
     public float thumbDistToCenter;
     public float thumbToSpherePenetration;
     public float thumbForce;
-    public float thumbScaleValue = 0.01f; //m
+    public float thumbScaleValue = 0.04f; //m
     Vector3 thumbScaling;
 
     public float thumbPositionCommand;
@@ -75,7 +79,6 @@ public class GameLogic : MonoBehaviour
     public float targetAreaHeight;
     public bool isSphereInTarget = false; //Sphere in target boolean
 
-
     /**** Create WAYPOINT *****/
     GameObject waypoint; //Instatiate waypoint GameObject
     Rigidbody rigidWaypoint; //Declare rigid body on waypoint
@@ -96,7 +99,7 @@ public class GameLogic : MonoBehaviour
 
     /**** Trial Info *****/
     [Header("Trial Variables")]
-    public int trialNumber = 1; //the actual trial being worked on
+    public int trialNumber; //the actual trial being worked on
     public int numTrials = 3; // the total number of trials the user will participate in
     public int numElapsedTimes = 1; //num of attempts for each trial
 
@@ -122,6 +125,10 @@ public class GameLogic : MonoBehaviour
         indexSphere = GameObject.Find("trakSTAR/Index Sphere");
         thumbSphere = GameObject.Find("trakSTAR/Thumb Sphere");
 
+        //Make Interactable
+        indexSphere.AddComponent<InteractionBehaviour>();
+        thumbSphere.AddComponent<InteractionBehaviour>();
+
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
 
@@ -129,9 +136,8 @@ public class GameLogic : MonoBehaviour
         thumbSphere.GetComponent<MeshRenderer>().material.color = Color.cyan;
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
-        indexScaling = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
-        thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
-        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
+        indexSphere.transform.localScale = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
+        thumbSphere.transform.localScale = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
 
         //Set up timing saving
         elapsedTimes = new float[numElapsedTimes * numTrials];
@@ -143,6 +149,9 @@ public class GameLogic : MonoBehaviour
         createStartingArea(startingX, startingZ);
         createTargetArea(startingX, startingZ);
         createWaypoint(startingX);
+
+        forceValues = new float[] { 0.0f, 0.0f };
+        trialNumber = 1;
     }
 
     // Update is called once per frame
@@ -346,6 +355,9 @@ public class GameLogic : MonoBehaviour
 
         /***Lock sphere location and orientation - TEMPORARY***/
         //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+
+        //Make Interactable
+        sphere.AddComponent<InteractionBehaviour>();
     }
 
     public void resetSphere()
