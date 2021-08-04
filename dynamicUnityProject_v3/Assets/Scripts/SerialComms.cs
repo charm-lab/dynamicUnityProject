@@ -29,6 +29,9 @@ public class SerialComms : MonoBehaviour
     void Start()
     {
         //Debug.Log("Start Serial Comms");
+        //Initialize arudino array
+        arduinoDataVals = new string[3] { "", "", "" };
+
         //initialize lists
         arduinoDataList = new List<string[]>();
         unityDataList = new List<float[]>();
@@ -121,11 +124,17 @@ public class SerialComms : MonoBehaviour
 
                 expectedUnityEntries = unityDataVals.Length;
 
+                float arduinoStartTime = Time.time;
                 //Write to Arudino via serial
                 writeSerial(message);
 
                 //Read the serial data that came from arduino
                 readSerial();
+
+                float arduinoElapsedTime = 1000.0f * (Time.time - arduinoStartTime);
+
+                arduinoDataVals[2] = arduinoElapsedTime.ToString();
+                //Debug.Log("arduinoElapsedTime: " + arduinoDataVals[2]);
 
                 //Add data to the lists
                 arduinoDataList.Add(arduinoDataVals);
@@ -174,7 +183,13 @@ public class SerialComms : MonoBehaviour
             {
                 //read stuff
                 string arduinoMessage = stream.ReadLine();
-                arduinoDataVals = arduinoMessage.Split(',');
+                string[] arduinoDataValsTemp = arduinoMessage.Split(',');
+
+                if (arduinoDataValsTemp.Length == 2)
+                {
+                    arduinoDataVals[0] = arduinoDataValsTemp[0];
+                    arduinoDataVals[1] = arduinoDataValsTemp[1];
+                }
             }
             catch (System.TimeoutException)
             {
@@ -190,7 +205,7 @@ public class SerialComms : MonoBehaviour
     {
         //Assume data is valid
         bool dataIsValid = true;
-       
+
         #region
         ///** TEST THE DATA VALIDITY **/
         ///*
@@ -248,7 +263,7 @@ public class SerialComms : MonoBehaviour
         //Assume data is valid
         bool dataIsValid = true;
 
-        
+
         #region
         ///** TEST THE DATA VALIDITY **/
         ///*

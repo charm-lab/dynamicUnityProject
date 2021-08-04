@@ -40,9 +40,9 @@ double unityCurrentTime;
 double trialNumber = 1; //default
 
 /*Arudino Timing*/
-unsigned long startTime;
-unsigned long currentTime;
-unsigned long arduinoElapsedTime;
+//unsigned long startTime;
+//unsigned long currentTime;
+//unsigned long arduinoElapsedTime;
 
 /********************************************************
    Function setup
@@ -78,28 +78,11 @@ void setup() {
 
 void loop() {
 
-  startTime = millis();
+  //startTime = millis();
 
   //Receives command from Unity via Serial
   receiveSerial();
-/*
-  Serial.println(numLoops);
-  Serial.println("_______________________Start Loop #" + (String)numLoops + "_______________________\n");
-  delay(PRINT_DELAY);
 
-  //Set the position command:
-    if(numLoops != 1){
-  //Set the desired position from serial input
-  receiveSerial();
-
-  Serial.println("desiredPos1: " + (String)desiredPos1);
-  Serial.println("desiredPos2: " + (String)desiredPos2);
-    }
-    else {
-      desiredPos1 = 0.00;
-      desiredPos2 = 0.00;
-    }
-*/
   /*Servo1*/
   finalPosition1 = desiredPos1;
 
@@ -112,24 +95,18 @@ void loop() {
   double distanceToMove2 = finalPosition2 - initialPosition2;
   double thetaCurrent2 = theta2;
 
-  /*Status Print Statements
-    Serial.print("Servo1 Final Position: " + (String)finalPosition1 + "\t|\t" + "Servo2 Final Position: " + (String)finalPosition2 + "\n"
-              + "Servo1 Initial Position: "   + (String)initialPosition1 + "\t|\t" + "Servo2 Initial Position: "   + (String)initialPosition2 + "\n"
-              + "Servo1 Distance to Move: " + (String)distanceToMove1 + "\t|\t" + "Servo2 Distance to Move: " + (String)distanceToMove2 + "\n"
-              + "Servo1 ThetaCurrent: " + (String)thetaCurrent1 + "\t|\t" + "Servo2 ThetaCurrent: " + (String)thetaCurrent2 + "\n");
-              delay(PRINT_DELAY);
-  */
   moveEndEffectors(distanceToMove1, thetaCurrent1, finalPosition1, distanceToMove2, thetaCurrent2, finalPosition2);
 
   //Serial.println("______________________Finished Loop______________________\n");
   //delay(1);
   numLoops++;
 
-  currentTime = millis();
-  arduinoElapsedTime = currentTime - startTime;
+  //currentTime = millis();
+  //arduinoElapsedTime = currentTime - startTime;
 
   //Prep Data for Processing:
-  Serial.println((String)finalPosition1 + "," + (String)finalPosition2 + "," + (String)arduinoElapsedTime);
+  Serial.println((String)finalPosition1 + "," + (String)finalPosition2);
+  //Serial.println((String)finalPosition1 + "," + (String)finalPosition2 + "," + (String)arduinoElapsedTime);
   //Serial.println((String)desiredPos1 + "," + (String)desiredPos2 + "," + (String)arduinoElapsedTime + "," + (String)unityCurrentTime + "," + (String)trialNumber);
 
 }
@@ -151,27 +128,8 @@ void receiveSerial() {
 
     String inByte1 = rawData.substring(0, rawData.indexOf("A"));
     String inByte2 = rawData.substring(rawData.indexOf("A") + 1, rawData.indexOf("B"));
-    /*
-    String inByte3 = rawData.substring(rawData.indexOf("B") + 1, rawData.indexOf("C"));
-    String inByte4 = rawData.substring(rawData.indexOf("C") + 1, rawData.indexOf("D"));
-    */
-  /*
-    Serial.println("raw inByte1: " + inByte1);
-    Serial.println("raw inByte2: " + inByte2);
-    Serial.println("raw inByte3: " + inByte3);
-    Serial.println("raw inByte4: " + inByte4);
-    Serial.println("inByte1: " + (String)inByte1.toDouble());
-    Serial.println("inByte2: " + (String)inByte2.toDouble());
-    Serial.println("inByte3: " + (String)inByte3.toDouble());
-    Serial.println("inByte4: " + (String)inByte4.toDouble());
-  */
    
     desiredPos1 = inByte1.toDouble();
     desiredPos2 = inByte2.toDouble();
-    /*
-    unityCurrentTime = inByte3.toDouble();
-    trialNumber = inByte4.toDouble();
-    */
-    //Serial.println("ARDUINO --> desiredPos1: " + (String)desiredPos1 + " desiredPos2: " + (String)desiredPos2);
   }
 }
