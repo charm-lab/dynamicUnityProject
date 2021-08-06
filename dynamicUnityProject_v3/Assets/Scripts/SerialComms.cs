@@ -66,7 +66,7 @@ public class SerialComms : MonoBehaviour
                 float num1 = player.GetComponent<GameLogic>().indexPositionCommand;
                 float num2 = player.GetComponent<GameLogic>().thumbPositionCommand;
                 float num3 = currentTime;
-                int num4 = 1;//player.GetComponent<GameLogic>().trialNumber; // stop or trial number
+                int num4 = player.GetComponent<GameLogic>().trialNumber; // stop or trial number
 
                 string message = num1.ToString("0.00") + "A" + num2.ToString("0.00") + "B";
 
@@ -142,6 +142,12 @@ public class SerialComms : MonoBehaviour
 
                 //Debug.Log("Back from Arduino");
                 lastTime = currentTime;
+
+                //End the experiment if trial number is too high or low
+                if (num4 > 4 || num4 < 0)
+                {
+                    OnApplicationQuit();
+                }
 
                 #region
                 /*

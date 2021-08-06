@@ -2,9 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
-using Leap;
-using Leap.Unity;
-using Leap.Unity.Interaction;
 
 
 public class GameLogic : MonoBehaviour
@@ -125,10 +122,6 @@ public class GameLogic : MonoBehaviour
         indexSphere = GameObject.Find("trakSTAR/Index Sphere");
         thumbSphere = GameObject.Find("trakSTAR/Thumb Sphere");
 
-        //Make Interactable
-        indexSphere.AddComponent<InteractionBehaviour>();
-        thumbSphere.AddComponent<InteractionBehaviour>();
-
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = new Vector3(0.0f, 0.0f, 0.0f);
 
@@ -166,6 +159,29 @@ public class GameLogic : MonoBehaviour
             resetSphere();
         }
 
+       
+        #region Change trial number 
+        /*//Change trial number
+        if (Input.GetKey("1"))
+        {
+            trialNumber = 1;
+        }
+        if (Input.GetKey("2"))
+        {
+            trialNumber = 2;
+        }
+        if (Input.GetKey("3"))
+        {
+            trialNumber = 3;
+        }
+        if (Input.GetKey("4"))
+        {
+            trialNumber = 4;
+        } */
+        #endregion Change trial number
+       
+
+        #region Wapyoint color
         //Wapyoint color
         if (passedWaypoint)
         {
@@ -187,6 +203,7 @@ public class GameLogic : MonoBehaviour
             waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
             waypointMeshRenderer.material.renderQueue = 3000;
         }
+        #endregion Wapyoint color
     }
 
     // FixedUpdate is called once every physics step
@@ -356,8 +373,6 @@ public class GameLogic : MonoBehaviour
         /***Lock sphere location and orientation - TEMPORARY***/
         //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
 
-        //Make Interactable
-        sphere.AddComponent<InteractionBehaviour>();
     }
 
     public void resetSphere()
