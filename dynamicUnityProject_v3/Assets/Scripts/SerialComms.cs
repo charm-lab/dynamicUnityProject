@@ -51,6 +51,7 @@ public class SerialComms : MonoBehaviour
         //Enable Game Logic
         player.GetComponent<GameLogic>().enabled = true;
         Debug.Log("Game Logic Enabled");
+        
     }
 
     // Update is called once per frame
@@ -134,7 +135,7 @@ public class SerialComms : MonoBehaviour
                 float arduinoElapsedTime = 1000.0f * (Time.time - arduinoStartTime);
 
                 arduinoDataVals[2] = arduinoElapsedTime.ToString();
-                //Debug.Log("arduinoElapsedTime: " + arduinoDataVals[2]);
+                Debug.Log("arduinoElapsedTime: " + arduinoDataVals[2]);
 
                 //Add data to the lists
                 arduinoDataList.Add(arduinoDataVals);
@@ -144,11 +145,12 @@ public class SerialComms : MonoBehaviour
                 lastTime = currentTime;
 
                 //End the experiment if trial number is too high or low
+                /*
                 if (num4 > 4 || num4 < 0)
                 {
                     OnApplicationQuit();
                 }
-
+                */
                 #region
                 /*
                 if (Input.GetKey("0") || (player.trialNumber == -1))
@@ -209,11 +211,11 @@ public class SerialComms : MonoBehaviour
     //to make sure it contains legitimate data: no NaNs or special characters
     private List<string[]> validateArduinoData(List<string[]> arduinoDataList)
     {
-        //Assume data is valid
-        bool dataIsValid = true;
-
         #region
         ///** TEST THE DATA VALIDITY **/
+        //Assume data is valid
+        //bool dataIsValid = true;
+        
         ///*
         //if (arduinoDataVals == null || unityDataVals == null)
         //{
@@ -266,12 +268,13 @@ public class SerialComms : MonoBehaviour
 
     private List<float[]> validateUnityData(List<float[]> unityDataList)
     {
-        //Assume data is valid
-        bool dataIsValid = true;
-
-
         #region
         ///** TEST THE DATA VALIDITY **/
+        //Assume data is valid
+        //bool dataIsValid = true;
+
+
+        
         ///*
         //if (ardninoDataVals == null || unityDataVals == null)
         //{
@@ -317,7 +320,6 @@ public class SerialComms : MonoBehaviour
         //    */
         //}
         #endregion
-
 
         Debug.Log("Unity Data Validated");
         return unityDataList;

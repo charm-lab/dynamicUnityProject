@@ -361,7 +361,6 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194226}
   - component: {fileID: 963194227}
-  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -434,101 +433,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 15, y: -90, z: 0}
---- !u!114 &963194229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: abb0e8dd6c809854f8fea5e0976884f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  editTimePose: 1
-  _frameOptimization: 0
-  _physicsExtrapolation: 1
-  _physicsExtrapolationTime: 0.011111111
-  _workerThreadProfiling: 0
-  _useInterpolation: 1
-  ExtrapolationAmount: 0
-  BounceAmount: 0
-  _isDestroyed: 0
-  _fixedOffset:
-    value: 0
-    delay: 0
-    reset: 1
-  _smoothedTrackingLatency:
-    value: 0
-    delay: 0
-    reset: 1
-  _untransformedUpdateFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _transformedUpdateFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _untransformedFixedFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _transformedFixedFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _backingUntransformedEditTimeFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _backingEditTimeFrame:
-    CurrentFramesPerSecond: 0
-    Hands: []
-  _framesSinceServiceConnectionChecked: 0
-  _numberOfReconnectionAttempts: 0
-  _deviceOffsetMode: 0
-  _deviceOffsetYAxis: 0
-  _deviceOffsetZAxis: 0.12
-  _deviceTiltXAxis: 5
-  _deviceOrigin: {fileID: 0}
-  _preCullCamera: {fileID: 963194227}
-  _temporalWarpingMode: 0
-  _customWarpAdjustment: 17
-  _updateHandInPrecull: 0
-  manualUpdateHasBeenCalledSinceUpdate: 0
-  warpedPosition: {x: 0, y: 0, z: 0}
-  warpedRotation: {x: 0, y: 0, z: 0, w: 1}
-  _transformArray:
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  _cachedCamera: {fileID: 0}
 --- !u!850595691 &977844188
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -691,6 +595,7 @@ MonoBehaviour:
   portName: COM3
   baudRate: 9600
   expectedUnityEntries: 0
+  index: 0
 --- !u!1 &1409151990
 GameObject:
   m_ObjectHideFlags: 0

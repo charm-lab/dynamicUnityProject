@@ -19,7 +19,7 @@ public class GameLogic : MonoBehaviour
     public float indexDistToCenter;
     public float indexToSpherePenetration;
     public float indexForce;
-    public float indexScaleValue = 0.04f;  //m
+    public float indexScaleValue = 0.01f;  //m
     Vector3 indexScaling;
 
     public float indexPositionCommand;
@@ -30,7 +30,7 @@ public class GameLogic : MonoBehaviour
     public float thumbDistToCenter;
     public float thumbToSpherePenetration;
     public float thumbForce;
-    public float thumbScaleValue = 0.04f; //m
+    public float thumbScaleValue = 0.01f; //m
     Vector3 thumbScaling;
 
     public float thumbPositionCommand;
@@ -371,7 +371,7 @@ public class GameLogic : MonoBehaviour
         rigidSphere.angularDrag = 10.0f;
 
         /***Lock sphere location and orientation - TEMPORARY***/
-        //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+        rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
 
     }
 
@@ -514,7 +514,7 @@ public class GameLogic : MonoBehaviour
         rigidWaypoint.useGravity = false;
 
         /***Lock location and orientation***/
-        rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+        //rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public bool checkWaypoint()
