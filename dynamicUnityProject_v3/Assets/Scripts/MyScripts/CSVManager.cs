@@ -65,7 +65,7 @@ public static class CSVManager
     };
 
     //Header for timestamp of real-world time
-    private static string irlTimeStampHeader = "IRL Timestamp";
+    //private static string irlTimeStampHeader = "IRL Timestamp";
 
     #region FileInteractions
     //Add line to the report

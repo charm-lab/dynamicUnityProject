@@ -97,7 +97,7 @@ public class GameLogic : MonoBehaviour
     /**** Trial Info *****/
     [Header("Trial Variables")]
     public int trialNumber = 1; //the actual trial being worked on
-    public int numTrials = 3; // the total number of trials the user will participate in
+    public int numTrials = 4; // the total number of trials the user will participate in
     public int numElapsedTimes = 1; //num of attempts for each trial
 
     public int successCounter = 0; //number of successful moves within a trial
@@ -143,6 +143,9 @@ public class GameLogic : MonoBehaviour
         createStartingArea(startingX, startingZ);
         createTargetArea(startingX, startingZ);
         createWaypoint(startingX);
+
+        forceValues = new float[] { 0.0f, 0.0f };
+        trialNumber = 1;
     }
 
     // Update is called once per frame
@@ -152,9 +155,18 @@ public class GameLogic : MonoBehaviour
     {
         //Debug.Log("GameLogic.cs");
         //Reset sphere if needed
-        if (Input.GetKey("space"))
+        if (Input.GetKeyDown("space"))
         {
             resetSphere();
+        }
+        //Manually Change Trial Number
+        if (Input.GetKeyDown("up"))
+        {
+            trialNumber++;
+        }
+        if (Input.GetKeyDown("down"))
+        {
+            trialNumber--;
         }
 
         //Wapyoint color
