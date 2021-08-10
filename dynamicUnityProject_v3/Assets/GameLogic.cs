@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 
-
 public class GameLogic : MonoBehaviour
 {
     #region
@@ -11,7 +10,7 @@ public class GameLogic : MonoBehaviour
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
 
-    public float[] forceValues;
+    float[] forceValues;
 
     [Header("Index Variables")]
     public Vector3 indexPosition;
@@ -76,6 +75,7 @@ public class GameLogic : MonoBehaviour
     public float targetAreaHeight;
     public bool isSphereInTarget = false; //Sphere in target boolean
 
+
     /**** Create WAYPOINT *****/
     GameObject waypoint; //Instatiate waypoint GameObject
     Rigidbody rigidWaypoint; //Declare rigid body on waypoint
@@ -96,8 +96,8 @@ public class GameLogic : MonoBehaviour
 
     /**** Trial Info *****/
     [Header("Trial Variables")]
-    public int trialNumber; //the actual trial being worked on
-    public int numTrials = 3; // the total number of trials the user will participate in
+    public int trialNumber = 1; //the actual trial being worked on
+    public int numTrials = 4; // the total number of trials the user will participate in
     public int numElapsedTimes = 1; //num of attempts for each trial
 
     public int successCounter = 0; //number of successful moves within a trial
@@ -129,8 +129,9 @@ public class GameLogic : MonoBehaviour
         thumbSphere.GetComponent<MeshRenderer>().material.color = Color.cyan;
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
-        indexSphere.transform.localScale = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
-        thumbSphere.transform.localScale = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
+        indexScaling = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
+        thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
+        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
 
         //Set up timing saving
         elapsedTimes = new float[numElapsedTimes * numTrials];
@@ -154,34 +155,20 @@ public class GameLogic : MonoBehaviour
     {
         //Debug.Log("GameLogic.cs");
         //Reset sphere if needed
-        if (Input.GetKey("space"))
+        if (Input.GetKeyDown("space"))
         {
             resetSphere();
         }
+        //Manually Change Trial Number
+        if (Input.GetKeyDown("up"))
+        {
+            trialNumber++;
+        }
+        if (Input.GetKeyDown("down"))
+        {
+            trialNumber--;
+        }
 
-       
-        #region Change trial number 
-        /*//Change trial number
-        if (Input.GetKey("1"))
-        {
-            trialNumber = 1;
-        }
-        if (Input.GetKey("2"))
-        {
-            trialNumber = 2;
-        }
-        if (Input.GetKey("3"))
-        {
-            trialNumber = 3;
-        }
-        if (Input.GetKey("4"))
-        {
-            trialNumber = 4;
-        } */
-        #endregion Change trial number
-       
-
-        #region Wapyoint color
         //Wapyoint color
         if (passedWaypoint)
         {
@@ -203,7 +190,6 @@ public class GameLogic : MonoBehaviour
             waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
             waypointMeshRenderer.material.renderQueue = 3000;
         }
-        #endregion Wapyoint color
     }
 
     // FixedUpdate is called once every physics step
@@ -371,8 +357,7 @@ public class GameLogic : MonoBehaviour
         rigidSphere.angularDrag = 10.0f;
 
         /***Lock sphere location and orientation - TEMPORARY***/
-        rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
-
+        //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public void resetSphere()
@@ -514,7 +499,7 @@ public class GameLogic : MonoBehaviour
         rigidWaypoint.useGravity = false;
 
         /***Lock location and orientation***/
-        //rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+        rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public bool checkWaypoint()

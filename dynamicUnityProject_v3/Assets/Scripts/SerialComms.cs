@@ -29,9 +29,6 @@ public class SerialComms : MonoBehaviour
     void Start()
     {
         //Debug.Log("Start Serial Comms");
-        //Initialize arudino array
-        arduinoDataVals = new string[3] { "", "", "" };
-
         //initialize lists
         arduinoDataList = new List<string[]>();
         unityDataList = new List<float[]>();
@@ -51,7 +48,6 @@ public class SerialComms : MonoBehaviour
         //Enable Game Logic
         player.GetComponent<GameLogic>().enabled = true;
         Debug.Log("Game Logic Enabled");
-        
     }
 
     // Update is called once per frame
@@ -71,8 +67,17 @@ public class SerialComms : MonoBehaviour
 
                 string message = num1.ToString("0.00") + "A" + num2.ToString("0.00") + "B";
 
-                //Prep Unity variables for saving
+                float arudinoStartTime = Time.time;
 
+                //Write to Arudino via serial
+                writeSerial(message);
+
+                //Read the serial data that came from arduino
+                readSerial();
+
+                float arduinoElapsedTime = 1000.0f * (Time.time - arudinoStartTime);
+
+                //Prep Unity variables for saving
                 unityDataVals = new float[] {
                     //Unity runtime
                     currentTime,
@@ -123,34 +128,21 @@ public class SerialComms : MonoBehaviour
                     num4
                     };
 
-                expectedUnityEntries = unityDataVals.Length;
-
-                float arduinoStartTime = Time.time;
-                //Write to Arudino via serial
-                writeSerial(message);
-
-                //Read the serial data that came from arduino
-                readSerial();
-
-                float arduinoElapsedTime = 1000.0f * (Time.time - arduinoStartTime);
-
-                arduinoDataVals[2] = arduinoElapsedTime.ToString();
-                Debug.Log("arduinoElapsedTime: " + arduinoDataVals[2]);
-
                 //Add data to the lists
-                arduinoDataList.Add(arduinoDataVals);
+                string[] arduinoDataValsFinal = new string[] { arduinoDataVals[0], arduinoDataVals[1], arduinoElapsedTime.ToString() };
+                
+                arduinoDataList.Add(arduinoDataValsFinal);
                 unityDataList.Add(unityDataVals);
 
                 //Debug.Log("Back from Arduino");
                 lastTime = currentTime;
 
-                //End the experiment if trial number is too high or low
-                /*
+                //If we exceed range of trials, end the program
                 if (num4 > 4 || num4 < 0)
                 {
                     OnApplicationQuit();
                 }
-                */
+
                 #region
                 /*
                 if (Input.GetKey("0") || (player.trialNumber == -1))
@@ -191,13 +183,15 @@ public class SerialComms : MonoBehaviour
             {
                 //read stuff
                 string arduinoMessage = stream.ReadLine();
-                string[] arduinoDataValsTemp = arduinoMessage.Split(',');
+                arduinoDataVals = arduinoMessage.Split(',');
 
-                if (arduinoDataValsTemp.Length == 2)
-                {
-                    arduinoDataVals[0] = arduinoDataValsTemp[0];
-                    arduinoDataVals[1] = arduinoDataValsTemp[1];
-                }
+                #region
+                //for (int i = 0; i < arduinoDataVals.Length; i++)
+                //{
+
+                //    Debug.Log("arduinoDataVals[" + i.ToString() + "]: " + arduinoDataVals[i]);// + " Length: " + arduinoDataVals[i].Length);
+                //}
+                #endregion
             }
             catch (System.TimeoutException)
             {
@@ -212,10 +206,11 @@ public class SerialComms : MonoBehaviour
     private List<string[]> validateArduinoData(List<string[]> arduinoDataList)
     {
         #region
-        ///** TEST THE DATA VALIDITY **/
         //Assume data is valid
         //bool dataIsValid = true;
-        
+
+
+        ///** TEST THE DATA VALIDITY **/
         ///*
         //if (arduinoDataVals == null || unityDataVals == null)
         //{
@@ -262,6 +257,21 @@ public class SerialComms : MonoBehaviour
         //}
         #endregion
 
+        //Get row of data from list to validate
+        for (int i = 0; i < arduinoDataList.Count; i++)
+        {
+            string[] arduinoDataListRow = arduinoDataList[i];
+
+            for (int j = 0; j < arduinoDataListRow.Length; j++)
+            {
+                if (arduinoDataListRow[j].Contains("\n"))
+                {
+                    //remove everything before newline including \n
+                    arduinoDataListRow[j] = arduinoDataListRow[j].Remove(0, arduinoDataListRow[j].IndexOf("\n")+1);
+                }
+            }
+        }
+
         Debug.Log("Arduino Data Validated");
         return arduinoDataList;
     }
@@ -269,12 +279,12 @@ public class SerialComms : MonoBehaviour
     private List<float[]> validateUnityData(List<float[]> unityDataList)
     {
         #region
-        ///** TEST THE DATA VALIDITY **/
         //Assume data is valid
         //bool dataIsValid = true;
 
 
-        
+
+        ///** TEST THE DATA VALIDITY **/
         ///*
         //if (ardninoDataVals == null || unityDataVals == null)
         //{
@@ -331,11 +341,11 @@ public class SerialComms : MonoBehaviour
         //Get row of data and save it to .csv file
         for (int i = 0; i < arduinoValidDataList.Count; i++)
         {
-            string[] arduinoDataRow = arduinoValidDataList[i];
-            float[] unityDataRow = unityDataList[i];
+            string[] arduinoValidDataRow = arduinoValidDataList[i];
+            float[] unityValidDataRow = unityValidDataList[i];
 
             //send to be saved
-            CSVManager.appendToReport(arduinoDataRow, unityDataRow);
+            CSVManager.appendToReport(arduinoValidDataRow, unityValidDataRow);
         }
 
         Debug.Log("Data Saved");
@@ -353,5 +363,11 @@ public class SerialComms : MonoBehaviour
         //Close Serial Stream
         Debug.Log("GOODBYE");
         stream.Close();
+
+        /*Shut down the application*/
+        UnityEditor.EditorApplication.isPlaying = false;
+
+        //Ignored in editor, used in build
+        Application.Quit();
     }
 }
