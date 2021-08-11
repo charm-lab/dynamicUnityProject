@@ -39,6 +39,9 @@ public class SerialComms : MonoBehaviour
         //Define and open serial port       
         stream = new SerialPort(portName, baudRate);
         stream.Open();
+        stream.DiscardInBuffer();
+        stream.DiscardOutBuffer();
+
         Debug.Log("Serial Communication Established");
 
         //Serial Port Read and Write Timeouts
@@ -48,6 +51,10 @@ public class SerialComms : MonoBehaviour
         //Enable Game Logic
         player.GetComponent<GameLogic>().enabled = true;
         Debug.Log("Game Logic Enabled");
+
+
+        writeSerial("0.00A0.00B");
+        readSerial();
     }
 
     // Update is called once per frame
@@ -69,6 +76,8 @@ public class SerialComms : MonoBehaviour
 
                 float arudinoStartTime = Time.time;
 
+                stream.DiscardInBuffer();
+                stream.DiscardOutBuffer();
                 //Write to Arudino via serial
                 writeSerial(message);
 
@@ -129,6 +138,7 @@ public class SerialComms : MonoBehaviour
                     };
 
                 //Add data to the lists
+
                 string[] arduinoDataValsFinal = new string[] { arduinoDataVals[0], arduinoDataVals[1], arduinoElapsedTime.ToString() };
                 
                 arduinoDataList.Add(arduinoDataValsFinal);
@@ -167,6 +177,7 @@ public class SerialComms : MonoBehaviour
         try
         {
             //read stuff
+            Debug.Log("MESSAGE: " + message);
             stream.Write(message);
         }
         catch (IOException e)
@@ -177,27 +188,37 @@ public class SerialComms : MonoBehaviour
 
     public void readSerial()
     {
+        bool lineRead = false; 
+
         if (stream.IsOpen)
         {
-            try
+            //keep trying until there is something to read in the stream
+            if (!lineRead)
             {
-                //read stuff
-                string arduinoMessage = stream.ReadLine();
-                arduinoDataVals = arduinoMessage.Split(',');
+                try
+                {
+                    //read stuff
+                    string arduinoMessage = stream.ReadLine();
+                    Debug.Log("arduinoMessage: " + arduinoMessage);
+                    arduinoDataVals = arduinoMessage.Split(',');
 
-                #region
-                //for (int i = 0; i < arduinoDataVals.Length; i++)
-                //{
+                    #region
+                    for (int i = 0; i < arduinoDataVals.Length; i++)
+                    {
 
-                //    Debug.Log("arduinoDataVals[" + i.ToString() + "]: " + arduinoDataVals[i]);// + " Length: " + arduinoDataVals[i].Length);
-                //}
-                #endregion
+                        Debug.Log("arduinoDataVals[" + i.ToString() + "]: " + arduinoDataVals[i]);// + " Length: " + arduinoDataVals[i].Length);
+                    }
+                    #endregion
+                    lineRead = true;
+                }
+                catch (System.TimeoutException)
+                {
+                    //time out exception
+                    //Do Nothing
+                }
             }
-            catch (System.TimeoutException)
-            {
-                //time out exception
-                //Do Nothing
-            }
+            
+
         }
     }
 
@@ -258,6 +279,7 @@ public class SerialComms : MonoBehaviour
         #endregion
 
         //Get row of data from list to validate
+        /*
         for (int i = 0; i < arduinoDataList.Count; i++)
         {
             string[] arduinoDataListRow = arduinoDataList[i];
@@ -270,7 +292,7 @@ public class SerialComms : MonoBehaviour
                     arduinoDataListRow[j] = arduinoDataListRow[j].Remove(0, arduinoDataListRow[j].IndexOf("\n")+1);
                 }
             }
-        }
+        }*/
 
         Debug.Log("Arduino Data Validated");
         return arduinoDataList;

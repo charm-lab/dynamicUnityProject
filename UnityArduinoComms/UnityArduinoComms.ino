@@ -39,11 +39,6 @@ double desiredPos2 = 0.00;
 double unityCurrentTime;
 double trialNumber = 1; //default
 
-/*Arudino Timing*/
-//unsigned long startTime;
-//unsigned long currentTime;
-//unsigned long arduinoElapsedTime;
-
 /********************************************************
    Function setup
    Parameters: void
@@ -70,15 +65,14 @@ void setup() {
   theta2 = 0.00;
   Servo2.write(theta2); //Start at servo zero position
 
+  clearSerial();
   while (!Serial) {
     //Blocking Code -- wait for serial port to connect
   }
-  //Serial.println("Serial Port Connected");
 }
 
 void loop() {
 
-  //startTime = millis();
 
   //Receives command from Unity via Serial
   receiveSerial();
@@ -97,17 +91,8 @@ void loop() {
 
   moveEndEffectors(distanceToMove1, thetaCurrent1, finalPosition1, distanceToMove2, thetaCurrent2, finalPosition2);
 
-  //Serial.println("______________________Finished Loop______________________\n");
-  //delay(1);
-  numLoops++;
-
-  //currentTime = millis();
-  //arduinoElapsedTime = currentTime - startTime;
-
   //Prep Data for Processing:
   Serial.println((String)finalPosition1 + "," + (String)finalPosition2);
-  //Serial.println((String)finalPosition1 + "," + (String)finalPosition2 + "," + (String)arduinoElapsedTime);
-  //Serial.println((String)desiredPos1 + "," + (String)desiredPos2 + "," + (String)arduinoElapsedTime + "," + (String)unityCurrentTime + "," + (String)trialNumber);
 
 }
 
@@ -121,7 +106,7 @@ void loop() {
 */
 
 void receiveSerial() {
-  if (Serial.available() > 0) {
+  if (Serial.available() > 9) {
     digitalWrite(13, HIGH);
     String rawData = Serial.readString();
     //Serial.println("Raw data: " + rawData);
@@ -131,5 +116,22 @@ void receiveSerial() {
    
     desiredPos1 = inByte1.toDouble();
     desiredPos2 = inByte2.toDouble();
+  }
+}
+
+
+/*********************************************************
+   Function clearSerial
+   Parameters: none
+   Returns: void
+   Purpose: Clears the serial buffer to so that code can be
+            rerun without worrying about changing boundaries
+            in the for loops in extendEndEffector and
+             contractEndEffector functions
+*/
+void clearSerial() {
+  while (Serial.available())
+  {
+    Serial.read();
   }
 }
