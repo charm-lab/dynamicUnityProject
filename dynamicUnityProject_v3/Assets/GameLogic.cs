@@ -11,7 +11,7 @@ public class GameLogic : MonoBehaviour
     GameObject trakSTAROrigin;
 
     Vector3[] forceValues;
-    Vector3 normalForce; //Strictly the normal from interacting with the floor
+    public Vector3 normalForce; //Strictly the normal from interacting with the floor
     public float floorPenetration;
     public float floorStiffness = 500; // N/m
 
@@ -55,6 +55,7 @@ public class GameLogic : MonoBehaviour
     public float sphereScaleValue = 0.05f; //m
     public float sphereStiffness = 50.0f; //in N/m
     public float sphereDamping = 5.0f; //in N/m/s
+    public float sphereWeight; //N scalar
 
     /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
@@ -221,7 +222,7 @@ public class GameLogic : MonoBehaviour
 
         //Penetration of fingers into sphere
         //1-DoF Version
-        indexToSpherePenetrationMag = 0.5f * (indexScaleValue+ sphereScaleValue) - indexDistToCenter;
+        indexToSpherePenetrationMag = 0.5f * (indexScaleValue + sphereScaleValue) - indexDistToCenter;
         thumbToSpherePenetrationMag = 0.5f * (thumbScaleValue + sphereScaleValue) - thumbDistToCenter;
         //Vector Version
         indexToSpherePenetration = indexSphere.GetComponent<SphereCollider>().ClosestPoint(spherePosition)
@@ -229,18 +230,17 @@ public class GameLogic : MonoBehaviour
         thumbToSpherePenetration = thumbSphere.GetComponent<SphereCollider>().ClosestPoint(spherePosition)
             - sphereCollider.ClosestPoint(thumbPosition);
 
-        floorPenetration = (0.5f * sphereScaleValue) - spherePosition.y;
-
         //Force Calculation
-        forceValues = calculateFingerForceValues(indexToSpherePenetration, thumbToSpherePenetration, 
+        forceValues = calculateFingerForceValues(indexToSpherePenetration, thumbToSpherePenetration,
             indexToSpherePenetrationMag, thumbToSpherePenetrationMag, trialNumber);
         indexForce = forceValues[0];
         thumbForce = forceValues[1];
-        normalForce = calculateNormalForce(floorPenetration);
+        normalForce = calculateNormalForce();
+        //Debug.Log("normalForce: " + normalForce.ToString());
 
         //Sphere Pose
-        spherePosition = sphere.transform.position; // getSpherePosition(indexForce, thumbForce, normalForce);
-        sphereOrientation = sphere.transform.eulerAngles;
+        sphere.transform.position = getSpherePosition(indexForce, thumbForce, normalForce);
+        //sphereOrientation = sphere.transform.eulerAngles;
 
         //Derive Position Command from force calculation
         indexPositionCommand = getFingerPositionCommand(Vector3.Magnitude(indexForce));
@@ -340,8 +340,8 @@ public class GameLogic : MonoBehaviour
         rigidSphere.drag = 10.0f;
         rigidSphere.angularDrag = 10.0f;
 
-        /***Lock sphere location and orientation - TEMPORARY***/
-        //rigidSphere.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+        sphereWeight = rigidSphere.mass * Vector3.Magnitude(Physics.gravity);
+
     }
 
     public void resetSphere()
@@ -626,15 +626,31 @@ public class GameLogic : MonoBehaviour
 
     }
 
-    public Vector3 calculateNormalForce(float floorPenetration)
+    public Vector3 calculateNormalForce()
     {
-        if (floorPenetration < 0.0f)
+        //No contact with floor
+        if (spherePosition.y > 0.5f * sphereScaleValue)
         {
-            return new Vector3( 0.0f, floorStiffness * floorPenetration, 0.0f);
+            floorPenetration = 0.0f;
+            return Vector3.zero;
         }
+        //Touching ground but no penetration into floor
+        else if (spherePosition.y == 0.5f * sphereScaleValue)
+        {
+            floorPenetration = 0.0f;
+            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
+        }
+        //Sphere penetrates floor but some portion is above floor
+        else if (spherePosition.y <= 0.5f * sphereScaleValue && spherePosition.y >= -0.5f * sphereScaleValue)
+        {
+            floorPenetration = 0.5f * sphereScaleValue + spherePosition.y;
+            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
+        }
+        //sphere has completely broken through floor and normal should be practically infinite
         else
         {
-            return Vector3.zero;
+            floorPenetration = -spherePosition.y + 0.5f * sphereScaleValue;
+            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
         }
     }
 
@@ -653,12 +669,18 @@ public class GameLogic : MonoBehaviour
     public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 normalForce)
     {
         Vector3 positionPrev = spherePosition;
+        //Debug.Log("positionPrev: " + positionPrev.ToString());
         Vector3 velocityPrev = sphereVelocity;
+        //Debug.Log("velocityPrev: " + velocityPrev.ToString());
         Vector3 accelerationPrev = sphereAcceleration;
+        //Debug.Log("accelerationPrev: " + accelerationPrev.ToString());
 
-        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + normalForce - sphereDamping*velocityPrev) / rigidSphere.mass;
-        sphereVelocity = velocityPrev + (accelerationPrev + sphereAcceleration) / (2.0f * Time.fixedDeltaTime);
-        spherePosition = positionPrev + (velocityPrev + sphereVelocity) / (2.0f * Time.fixedDeltaTime);
+        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + normalForce - sphereDamping * velocityPrev) / rigidSphere.mass;
+        //Debug.Log("sphereAcceleration: " + sphereAcceleration.ToString());
+        sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime; //velocityPrev + (accelerationPrev + sphereAcceleration) / (2.0f * Time.fixedDeltaTime); 
+        //Debug.Log("sphereVelocity: " + sphereVelocity.ToString());
+        spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime; //positionPrev + (velocityPrev + sphereVelocity) / (2.0f * Time.fixedDeltaTime); 
+        //Debug.Log("spherePosition: " + spherePosition.ToString());
 
         return spherePosition;
     }

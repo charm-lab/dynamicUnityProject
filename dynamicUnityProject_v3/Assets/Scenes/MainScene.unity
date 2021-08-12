@@ -375,7 +375,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
@@ -524,25 +524,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7275b3c462f715c4ebebfdbdc8073137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forceValues: []
+  normalForce: {x: 0, y: 0, z: 0}
+  floorPenetration: 0
+  floorStiffness: 500
   indexPosition: {x: 0, y: 0, z: 0}
   indexOrientation: {x: 0, y: 0, z: 0}
+  indexToSpherePenetration: {x: 0, y: 0, z: 0}
+  indexForce: {x: 0, y: 0, z: 0}
   indexDistToCenter: 0
-  indexToSpherePenetration: 0
-  indexForce: 0
+  indexToSpherePenetrationMag: 0
   indexScaleValue: 0.01
   indexPositionCommand: 0
   thumbPosition: {x: 0, y: 0, z: 0}
   thumbOrientation: {x: 0, y: 0, z: 0}
+  thumbToSpherePenetration: {x: 0, y: 0, z: 0}
+  thumbForce: {x: 0, y: 0, z: 0}
   thumbDistToCenter: 0
-  thumbToSpherePenetration: 0
-  thumbForce: 0
+  thumbToSpherePenetrationMag: 0
   thumbScaleValue: 0.01
   thumbPositionCommand: 0
   spherePosition: {x: 0, y: 0, z: 0}
+  sphereVelocity: {x: 0, y: 0, z: 0}
+  sphereAcceleration: {x: 0, y: 0, z: 0}
   sphereOrientation: {x: 0, y: 0, z: 0}
   sphereScaleValue: 0.05
   sphereStiffness: 50
+  sphereDamping: 5
+  sphereWeight: 0
   startingAreaPosition: {x: 0, y: 0, z: 0}
   startingAreaRadius: 0.2
   startingAreaHeight: 0
@@ -595,7 +603,6 @@ MonoBehaviour:
   portName: COM3
   baudRate: 9600
   expectedUnityEntries: 0
-  index: 0
 --- !u!1 &1409151990
 GameObject:
   m_ObjectHideFlags: 0

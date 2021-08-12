@@ -65,7 +65,6 @@ void setup() {
   theta2 = 0.00;
   Servo2.write(theta2); //Start at servo zero position
 
-  clearSerial();
   while (!Serial) {
     //Blocking Code -- wait for serial port to connect
   }
@@ -106,7 +105,7 @@ void loop() {
 */
 
 void receiveSerial() {
-  if (Serial.available() > 9) {
+  if (Serial.available() > 0) {
     digitalWrite(13, HIGH);
     String rawData = Serial.readString();
     //Serial.println("Raw data: " + rawData);
@@ -116,22 +115,5 @@ void receiveSerial() {
    
     desiredPos1 = inByte1.toDouble();
     desiredPos2 = inByte2.toDouble();
-  }
-}
-
-
-/*********************************************************
-   Function clearSerial
-   Parameters: none
-   Returns: void
-   Purpose: Clears the serial buffer to so that code can be
-            rerun without worrying about changing boundaries
-            in the for loops in extendEndEffector and
-             contractEndEffector functions
-*/
-void clearSerial() {
-  while (Serial.available())
-  {
-    Serial.read();
   }
 }

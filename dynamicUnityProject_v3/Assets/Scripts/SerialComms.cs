@@ -39,8 +39,8 @@ public class SerialComms : MonoBehaviour
         //Define and open serial port       
         stream = new SerialPort(portName, baudRate);
         stream.Open();
-        stream.DiscardInBuffer();
-        stream.DiscardOutBuffer();
+        //stream.DiscardInBuffer();
+        //stream.DiscardOutBuffer();
 
         Debug.Log("Serial Communication Established");
 
@@ -51,7 +51,6 @@ public class SerialComms : MonoBehaviour
         //Enable Game Logic
         player.GetComponent<GameLogic>().enabled = true;
         Debug.Log("Game Logic Enabled");
-
 
         writeSerial("0.00A0.00B");
         readSerial();
@@ -140,7 +139,7 @@ public class SerialComms : MonoBehaviour
                 //Add data to the lists
 
                 string[] arduinoDataValsFinal = new string[] { arduinoDataVals[0], arduinoDataVals[1], arduinoElapsedTime.ToString() };
-                
+
                 arduinoDataList.Add(arduinoDataValsFinal);
                 unityDataList.Add(unityDataVals);
 
@@ -152,22 +151,6 @@ public class SerialComms : MonoBehaviour
                 {
                     OnApplicationQuit();
                 }
-
-                #region
-                /*
-                if (Input.GetKey("0") || (player.trialNumber == -1))
-                {
-                    //string endMessage = 0 + "A" + 0 + "B" + 0 + "C" + 0 + "D";
-                    string endMessage = 1 + "A" + 2 + "B" + 34 + "C" + 0 + "D"; //0 trial number to quit
-                    writeSerial(endMessage);
-                    Debug.Log("Sent endMessage: " + endMessage);
-
-                    //quit the editor
-                    UnityEditor.EditorApplication.isPlaying = false; 
-                    //Application.Quit(); //Quits game when not in editor (after built project)
-                }
-                */
-                #endregion
             }
         }
     }
@@ -177,7 +160,7 @@ public class SerialComms : MonoBehaviour
         try
         {
             //read stuff
-            Debug.Log("MESSAGE: " + message);
+            //Debug.Log("MESSAGE: " + message);
             stream.Write(message);
         }
         catch (IOException e)
@@ -188,37 +171,31 @@ public class SerialComms : MonoBehaviour
 
     public void readSerial()
     {
-        bool lineRead = false; 
-
         if (stream.IsOpen)
         {
-            //keep trying until there is something to read in the stream
-            if (!lineRead)
+            try
             {
-                try
-                {
-                    //read stuff
-                    string arduinoMessage = stream.ReadLine();
-                    Debug.Log("arduinoMessage: " + arduinoMessage);
-                    arduinoDataVals = arduinoMessage.Split(',');
+                //read stuff
+                string arduinoMessage = stream.ReadLine();
+                //Debug.Log("arduinoMessage: " + arduinoMessage);
+                arduinoDataVals = arduinoMessage.Split(',');
 
-                    #region
-                    for (int i = 0; i < arduinoDataVals.Length; i++)
-                    {
-
-                        Debug.Log("arduinoDataVals[" + i.ToString() + "]: " + arduinoDataVals[i]);// + " Length: " + arduinoDataVals[i].Length);
-                    }
-                    #endregion
-                    lineRead = true;
-                }
-                catch (System.TimeoutException)
+                #region
+                /*
+                for (int i = 0; i < arduinoDataVals.Length; i++)
                 {
-                    //time out exception
-                    //Do Nothing
+
+                    Debug.Log("arduinoDataVals[" + i.ToString() + "]: " + arduinoDataVals[i]);// + " Length: " + arduinoDataVals[i].Length);
                 }
+                */
+                #endregion
+                //lineRead = true;
             }
-            
-
+            catch (System.TimeoutException)
+            {
+                //time out exception
+                //Do Nothing
+            }
         }
     }
 
@@ -226,60 +203,8 @@ public class SerialComms : MonoBehaviour
     //to make sure it contains legitimate data: no NaNs or special characters
     private List<string[]> validateArduinoData(List<string[]> arduinoDataList)
     {
-        #region
-        //Assume data is valid
-        //bool dataIsValid = true;
-
-
-        ///** TEST THE DATA VALIDITY **/
-        ///*
-        //if (arduinoDataVals == null || unityDataVals == null)
-        //{
-        //    //Data is invalid - do not save or denote the bad data                    
-        //    dataIsValid = false;
-
-        //}
-        //*/
-        ////Check that there are even enough values in the to be saved
-        //if (arduinoDataVals.Length != 3 || unityDataVals.Length != expectedUnityEntries)
-        //{
-        //    //Data is invalid - do not save or denote the bad data                    
-        //    dataIsValid = false;
-        //}
-
-        ///*
-        ////Check that all unity values are real numbers
-        //for (int i = 0; i < unityDataVals.Length; i++)
-        //{
-
-        //    if (float.IsNaN(unityDataVals[i]))
-        //    {
-        //        dataIsValid = false;
-        //        break;
-        //    }
-        //}
-        //*/
-        ////Check if ? are in data 
-        //for (int i = 0; i < aruninoDataVals.Length; i++)
-        //{
-        //    if (arduinoDataVals[i].Contains("?"))
-        //    {
-        //        dataIsValid = false;
-        //        break;
-        //    }
-
-        //    /*
-        //    float tempFloat = float.Parse(arduinoDataVals[i]);
-        //    if (float.IsNaN(tempFloat))
-        //    {
-        //        dataIsValid = false;
-        //    }
-        //    */
-        //}
-        #endregion
 
         //Get row of data from list to validate
-        /*
         for (int i = 0; i < arduinoDataList.Count; i++)
         {
             string[] arduinoDataListRow = arduinoDataList[i];
@@ -289,10 +214,10 @@ public class SerialComms : MonoBehaviour
                 if (arduinoDataListRow[j].Contains("\n"))
                 {
                     //remove everything before newline including \n
-                    arduinoDataListRow[j] = arduinoDataListRow[j].Remove(0, arduinoDataListRow[j].IndexOf("\n")+1);
+                    arduinoDataListRow[j] = arduinoDataListRow[j].Remove(0, arduinoDataListRow[j].IndexOf("\n") + 1);
                 }
             }
-        }*/
+        }
 
         Debug.Log("Arduino Data Validated");
         return arduinoDataList;
@@ -300,59 +225,6 @@ public class SerialComms : MonoBehaviour
 
     private List<float[]> validateUnityData(List<float[]> unityDataList)
     {
-        #region
-        //Assume data is valid
-        //bool dataIsValid = true;
-
-
-
-        ///** TEST THE DATA VALIDITY **/
-        ///*
-        //if (ardninoDataVals == null || unityDataVals == null)
-        //{
-        //    //Data is invalid - do not save or denote the bad data                    
-        //    dataIsValid = false;
-
-        //}
-        //*/
-        ////Check that there are even enough values in the to be saved
-        //if (ardninoDataVals.Length != 3 || unityDataVals.Length != expectedUnityEntries)
-        //{
-        //    //Data is invalid - do not save or denote the bad data                    
-        //    dataIsValid = false;
-        //}
-
-        ///*
-        ////Check that all unity values are real numbers
-        //for (int i = 0; i < unityDataVals.Length; i++)
-        //{
-
-        //    if (float.IsNaN(unityDataVals[i]))
-        //    {
-        //        dataIsValid = false;
-        //        break;
-        //    }
-        //}
-        //*/
-        ////Check if ? are in data 
-        //for (int i = 0; i < ardninoDataVals.Length; i++)
-        //{
-        //    if (ardninoDataVals[i].Contains("?"))
-        //    {
-        //        dataIsValid = false;
-        //        break;
-        //    }
-
-        //    /*
-        //    float tempFloat = float.Parse(ardninoDataVals[i]);
-        //    if (float.IsNaN(tempFloat))
-        //    {
-        //        dataIsValid = false;
-        //    }
-        //    */
-        //}
-        #endregion
-
         Debug.Log("Unity Data Validated");
         return unityDataList;
     }
@@ -360,6 +232,7 @@ public class SerialComms : MonoBehaviour
     //Send all valid data to CSV Manager to be saved and formatted to .csv
     private void saveDataToCSV(List<string[]> arduinoValidDataList, List<float[]> unityValidDataList)
     {
+        Debug.Log("arduinoValidDataList.Count = " + arduinoValidDataList.Count.ToString());
         //Get row of data and save it to .csv file
         for (int i = 0; i < arduinoValidDataList.Count; i++)
         {
@@ -375,6 +248,7 @@ public class SerialComms : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        Debug.Log("Raw Data Count = " + arduinoDataList.Count.ToString());
         Debug.Log("Validating Environment Data");
         List<string[]> arduinoValidDataList = validateArduinoData(arduinoDataList);
         List<float[]> unityValidDataList = validateUnityData(unityDataList);
