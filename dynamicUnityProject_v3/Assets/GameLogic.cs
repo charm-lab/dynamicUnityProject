@@ -9,40 +9,50 @@ public class GameLogic : MonoBehaviour
     GameObject indexSphere;
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
-
-    Vector3[] forceValues;
-    public Vector3 normalForce; //Strictly the normal from interacting with the floor
+    
+    [Header("Floor Variables")]
     public float floorPenetration;
-    public float floorStiffness = 500; // N/m
+    public float floorStiffness = 5000; // N/m
+    public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
+    
+    Vector3[] forceValues;
+    float[] positionCommands;
+    float fingerDamping = 50.0f;
 
     [Header("Index Variables")]
     public Vector3 indexPosition;
+    public Vector3 indexVelocity;
     public Vector3 indexOrientation;
-    public Vector3 indexToSpherePenetration;
+    public Vector3 indexPenetration;
+    public Vector3 indexPenetrationForce;
+    public Vector3 indexShearForce;
     public Vector3 indexForce;
     public float indexDistToCenter;
-    public float indexToSpherePenetrationMag;
-    public float indexScaleValue = 0.01f;  //m
+    public float indexPenetrationMagSign;
+    public float indexScaleValue = 0.02f;  //m
+    Vector3 indexPositionPrev;
     Vector3 indexScaling;
-
-    public float indexPositionCommand;
 
     [Header("Thumb Variables")]
     public Vector3 thumbPosition;
+    public Vector3 thumbVelocity;
     public Vector3 thumbOrientation;
-    public Vector3 thumbToSpherePenetration;
+    public Vector3 thumbPenetration;
+    public Vector3 thumbPenetrationForce;
+    public Vector3 thumbShearForce;
     public Vector3 thumbForce;
     public float thumbDistToCenter;
-    public float thumbToSpherePenetrationMag;
-    public float thumbScaleValue = 0.01f; //m
+    public float thumbPenetrationMagSign;
+    public float thumbScaleValue = 0.02f; //m
+    Vector3 thumbPositionPrev;
     Vector3 thumbScaling;
 
-    public float thumbPositionCommand;
+    [Header("Position Commands to Arduino")]
+    public float dorsalCommand;
+    public float ventralCommand;
 
     /**** Create SPHERE *****/
     GameObject sphere; //Instatiate Sphere GameObject
-    Rigidbody rigidSphere; //Declare rigid body on sphere
-    SphereCollider sphereCollider; //This declares your SphereCollider
     MeshRenderer sphereMeshRenderer; //Declares Mesh Renderer
                                      //Sphere Scaling and Stiffness
     Vector3 sphereScaling;
@@ -53,14 +63,13 @@ public class GameLogic : MonoBehaviour
     public Vector3 sphereAcceleration;
     public Vector3 sphereOrientation;
     public float sphereScaleValue = 0.05f; //m
+    public float sphereMass = 0.01f; //kg
     public float sphereStiffness = 50.0f; //in N/m
     public float sphereDamping = 5.0f; //in N/m/s
     public float sphereWeight; //N scalar
 
     /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
-    Rigidbody rigidStartingArea; //Declare rigid body on sphere
-    CapsuleCollider startingAreaCollider; //This declares your Collider
     MeshRenderer startingAreaMeshRenderer; //Declares Mesh Renderer
 
     [Header("Starting Area Variables")]
@@ -73,8 +82,6 @@ public class GameLogic : MonoBehaviour
 
     /**** Create TARGETAREA *****/
     GameObject targetArea; //Instatiate targetArea GameObject
-    Rigidbody rigidTargetArea; //Declare rigid body on sphere
-    CapsuleCollider targetAreaCollider; //This declares your Collider
     MeshRenderer targetAreaMeshRenderer; //Declares Mesh Renderer
 
     [Header("Target Area Variables")]
@@ -84,11 +91,8 @@ public class GameLogic : MonoBehaviour
     public float targetAreaHeight;
     public bool isSphereInTarget = false; //Sphere in target boolean
 
-
     /**** Create WAYPOINT *****/
     GameObject waypoint; //Instatiate waypoint GameObject
-    Rigidbody rigidWaypoint; //Declare rigid body on waypoint
-    SphereCollider waypointCollider; //This declares your Collider
     MeshRenderer waypointMeshRenderer; //Declares Mesh Renderer
 
     [Header("Waypoint Variables")]
@@ -139,8 +143,9 @@ public class GameLogic : MonoBehaviour
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
         indexScaling = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
+        indexSphere.transform.localScale = indexScaling;
         thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
-        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
+        thumbSphere.transform.localScale = thumbScaling;
 
         //Set up timing saving
         elapsedTimes = new float[numElapsedTimes * numTrials];
@@ -153,8 +158,14 @@ public class GameLogic : MonoBehaviour
         createTargetArea(startingX, startingZ);
         createWaypoint(startingX);
 
+        //Variable initializations
+        indexVelocity = Vector3.zero;
+        thumbVelocity = Vector3.zero;        
+        indexPositionPrev = Vector3.zero;
+        thumbPositionPrev = Vector3.zero;
         forceValues = new Vector3[] { Vector3.zero, Vector3.zero };
-        normalForce = Vector3.zero;
+        positionCommands = new float[] { 0.0f, 0.0f };
+        floorNormalForce = Vector3.zero;
         trialNumber = 1;
     }
 
@@ -215,36 +226,45 @@ public class GameLogic : MonoBehaviour
         indexOrientation = indexSphere.transform.eulerAngles;
         thumbPosition = thumbSphere.transform.position;
         thumbOrientation = thumbSphere.transform.eulerAngles;
+        
+        //Finger Velocity
+        indexVelocity = (indexPosition - indexPositionPrev)/ Time.fixedDeltaTime;
+        thumbVelocity = (thumbPosition - thumbPositionPrev)/ Time.fixedDeltaTime;
 
         //Distance between centers of finger and sphere
         indexDistToCenter = Vector3.Magnitude(indexPosition - spherePosition);
         thumbDistToCenter = Vector3.Magnitude(thumbPosition - spherePosition);
 
-        //Penetration of fingers into sphere
-        //1-DoF Version
-        indexToSpherePenetrationMag = 0.5f * (indexScaleValue + sphereScaleValue) - indexDistToCenter;
-        thumbToSpherePenetrationMag = 0.5f * (thumbScaleValue + sphereScaleValue) - thumbDistToCenter;
-        //Vector Version
-        indexToSpherePenetration = indexSphere.GetComponent<SphereCollider>().ClosestPoint(spherePosition)
-            - sphereCollider.ClosestPoint(indexPosition);
-        thumbToSpherePenetration = thumbSphere.GetComponent<SphereCollider>().ClosestPoint(spherePosition)
-            - sphereCollider.ClosestPoint(thumbPosition);
+        //Magnitude and sign of Penetration of fingers into sphere
+        //Positive --> Inside sphere | Negative --> Outside sphere
+        indexPenetrationMagSign = 0.5f * (indexScaleValue + sphereScaleValue)
+                                    - indexDistToCenter; 
+        thumbPenetrationMagSign = 0.5f * (thumbScaleValue + sphereScaleValue)
+                                    - thumbDistToCenter;
+
+        //Vector of Penetration of fingers into sphere
+        indexPenetration = indexPenetrationMagSign * (indexPosition - spherePosition) / indexDistToCenter;
+        thumbPenetration = thumbPenetrationMagSign * (thumbPosition - spherePosition) / thumbDistToCenter;
 
         //Force Calculation
-        forceValues = calculateFingerForceValues(indexToSpherePenetration, thumbToSpherePenetration,
-            indexToSpherePenetrationMag, thumbToSpherePenetrationMag, trialNumber);
+        forceValues = calculateFingerForceValues(indexPenetration, thumbPenetration,
+            indexPenetrationMagSign, thumbPenetrationMagSign);
         indexForce = forceValues[0];
         thumbForce = forceValues[1];
-        normalForce = calculateNormalForce();
-        //Debug.Log("normalForce: " + normalForce.ToString());
+        floorNormalForce = calculateFloorNormalForce();
 
         //Sphere Pose
-        sphere.transform.position = getSpherePosition(indexForce, thumbForce, normalForce);
+        sphere.transform.position = getSpherePosition(indexForce, thumbForce, floorNormalForce);
         //sphereOrientation = sphere.transform.eulerAngles;
 
-        //Derive Position Command from force calculation
-        indexPositionCommand = getFingerPositionCommand(Vector3.Magnitude(indexForce));
-        thumbPositionCommand = getFingerPositionCommand(Vector3.Magnitude(thumbForce));
+        //Derive Position Command from force calculation and assign 
+        positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexForce), Vector3.Magnitude(thumbForce));
+        dorsalCommand = positionCommands[0];
+        ventralCommand = positionCommands[1];
+
+        //set prev position
+        indexPositionPrev = indexPosition;
+        thumbPositionPrev = thumbPosition;
 
         /*****************************************************************************************/
 
@@ -252,7 +272,7 @@ public class GameLogic : MonoBehaviour
         //the distance between target area center and sphere center
         targetToSphereDist = Vector3.Magnitude(targetAreaPosition - spherePosition);
 
-        //state machine for trials
+        /**state machine for trials**/
 
         //Determine successes/fails
         //trialLogic();
@@ -307,41 +327,24 @@ public class GameLogic : MonoBehaviour
     {
         //Sphere Object Definition
         sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(sphere.GetComponent<SphereCollider>());
 
         //Name:
         sphere.name = "Sphere";
 
-        //Set Size and Initial Position
-        sphere.transform.localScale = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
+        //Set Size and Initial Position/Velocity
+        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
+        sphere.transform.localScale = sphereScaling;
         sphere.transform.position = new Vector3(startingX, 0.5f * sphereScaleValue, startingZ);
         spherePosition = sphere.transform.position;
         sphereVelocity = Vector3.zero;
         sphereAcceleration = Vector3.zero;
 
-        //This sets the Collider radius when the GameObject collides with a trigger Collider
-        sphereCollider = sphere.GetComponent<SphereCollider>();
-        sphereCollider.radius = 0.5f;
-
-        PhysicMaterial sphereFriction = new PhysicMaterial();
-        sphereFriction.dynamicFriction = 10.0f;
-        sphereFriction.staticFriction = 10.0f;
-
-        sphereCollider.material = sphereFriction;
-
         //Set Sphere mesh properties
         sphereMeshRenderer = sphere.GetComponent<MeshRenderer>();
         sphereMeshRenderer.material.color = Color.blue;
 
-        //Set Sphere Rigid Body dynamics
-        rigidSphere = sphere.AddComponent<Rigidbody>();
-        rigidSphere.isKinematic = false;
-        rigidSphere.useGravity = true;
-        rigidSphere.mass = 15.0f;
-        rigidSphere.drag = 10.0f;
-        rigidSphere.angularDrag = 10.0f;
-
-        sphereWeight = rigidSphere.mass * Vector3.Magnitude(Physics.gravity);
-
+        sphereWeight = sphereMass * Vector3.Magnitude(Physics.gravity);
     }
 
     public void resetSphere()
@@ -366,19 +369,16 @@ public class GameLogic : MonoBehaviour
     {
         //Starting Area Object Definition
         startingArea = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        Destroy(startingArea.GetComponent<CapsuleCollider>());
 
         //Name:
         startingArea.name = "StartingArea";
 
         //Set Size and Initial Position
-        startingAreaHeight = sphereCollider.radius * sphereScaleValue;
+        startingAreaHeight = 0.5f * sphereScaleValue;
         startingArea.transform.localScale = new Vector3(startingAreaRadius, startingAreaHeight, startingAreaRadius);
         startingAreaPosition = new Vector3(startingX, startingAreaHeight, startingZ);
         startingArea.transform.position = startingAreaPosition;
-
-        //This sets the Collider radius when the GameObject collides with a trigger Collider
-        startingAreaCollider = startingArea.GetComponent<CapsuleCollider>();
-        startingAreaCollider.enabled = false;
 
         //Set mesh properties
         startingAreaMeshRenderer = startingArea.GetComponent<MeshRenderer>();
@@ -393,32 +393,22 @@ public class GameLogic : MonoBehaviour
         startingAreaMeshRenderer.material.renderQueue = 3000;
         #endregion StartColor
 
-        //Set Rigid Body dynamics
-        rigidStartingArea = startingArea.AddComponent<Rigidbody>();
-        rigidStartingArea.isKinematic = false;
-        rigidStartingArea.useGravity = false;
-
-        /***Lock location and orientation***/
-        rigidStartingArea.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public void createTargetArea(float startingX, float startingZ)
     {
         //Target area Object Definition
         targetArea = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        Destroy(targetArea.GetComponent<CapsuleCollider>());
 
         //Name:
         targetArea.name = "TargetArea";
 
         //Set Size and Initial Position
-        targetAreaHeight = sphereCollider.radius * sphereScaleValue;
+        targetAreaHeight = 0.5f * sphereScaleValue;
         targetArea.transform.localScale = new Vector3(targetAreaRadius, targetAreaHeight, targetAreaRadius);
         targetAreaPosition = new Vector3(startingX, targetAreaHeight, startingZ - targetOffset);
         targetArea.transform.position = targetAreaPosition;
-
-        //This sets the Collider radius when the GameObject collides with a trigger Collider
-        targetAreaCollider = targetArea.GetComponent<CapsuleCollider>();
-        targetAreaCollider.enabled = false;
 
         //Set mesh properties
         targetAreaMeshRenderer = targetArea.GetComponent<MeshRenderer>();
@@ -433,18 +423,12 @@ public class GameLogic : MonoBehaviour
         targetAreaMeshRenderer.material.renderQueue = 3000;
         #endregion TargetColor
 
-        //Set Rigid Body dynamics
-        rigidTargetArea = targetArea.AddComponent<Rigidbody>();
-        rigidTargetArea.isKinematic = false;
-        rigidTargetArea.useGravity = false;
-
-        /***Lock location and orientation***/
-        rigidTargetArea.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public void createWaypoint(float startingX)
     {
         waypoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(waypoint.GetComponent<SphereCollider>());
 
         //Name:
         waypoint.name = "Waypoint";
@@ -452,10 +436,6 @@ public class GameLogic : MonoBehaviour
         //Set Size and Initial Position
         waypoint.transform.localScale = new Vector3(waypointRadius, waypointRadius, waypointRadius);
         waypoint.transform.position = new Vector3(startingX, waypointCenterHeight, 0.5f * (startingArea.transform.position.z + targetArea.transform.position.z));
-
-        //This sets the Collider radius when the GameObject collides with a trigger Collider
-        waypointCollider = waypoint.GetComponent<SphereCollider>();
-        waypointCollider.enabled = false;
 
         //Set mesh properties
         waypointMeshRenderer = waypoint.GetComponent<MeshRenderer>();
@@ -469,14 +449,6 @@ public class GameLogic : MonoBehaviour
         waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
         waypointMeshRenderer.material.renderQueue = 3000;
         #endregion WaypointColor
-
-        //Set Rigid Body dynamics
-        rigidWaypoint = waypoint.AddComponent<Rigidbody>();
-        rigidWaypoint.isKinematic = false;
-        rigidWaypoint.useGravity = false;
-
-        /***Lock location and orientation***/
-        rigidWaypoint.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
     }
 
     public bool checkWaypoint()
@@ -507,126 +479,55 @@ public class GameLogic : MonoBehaviour
         return isSphereInTarget;
     }
 
-    public Vector3[] calculateFingerForceValues(Vector3 indexPenetrationVec, Vector3 thumbPenetrationVec, float indexPenetration, float thumbPenetration, int trialNumber)
+    public Vector3[] calculateFingerForceValues(Vector3 indexPenetration, Vector3 thumbPenetration,
+        float indexPenetrationMagSign, float thumbPenetrationMagSign)
     {
-        Vector3 dorsalVal;
-        Vector3 ventralVal;
+        Vector3 indexForceVal;
+        Vector3 thumbForceVal;
 
-        /*Condition 0: No Haptic Feebdack*/
-        if (trialNumber == 0)
+        if (indexPenetrationMagSign <= 0.0f)
         {
-            dorsalVal = Vector3.zero;
-            ventralVal = Vector3.zero;
+            indexPenetrationForce = Vector3.zero;
+            indexShearForce = Vector3.zero;
+            indexForceVal = Vector3.zero;
         }
-
-        /*Condition 1: Index --> Dorsal | Thumb --> Ventral*/
-        else if (trialNumber == 1)
-        {
-            //there should be no force in a direction
-            //if the penetration is negative or 0
-            //(signifying no contact from that direction)
-            if (indexPenetration <= 0.0f)
-            {
-                dorsalVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                dorsalVal = sphereStiffness * indexPenetrationVec;
-            }
-
-            if (thumbPenetration <= 0.0f)
-            {
-                ventralVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                ventralVal = sphereStiffness * thumbPenetrationVec;
-            }
-        }
-
-        /*Condition 2: Index --> Ventral | Thumb --> Dorsal*/
-        else if (trialNumber == 2)
-        {
-            if (indexPenetration <= 0.0f)
-            {
-                ventralVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                ventralVal = sphereStiffness * indexPenetrationVec;
-            }
-
-            if (thumbPenetration <= 0.0f)
-            {
-                dorsalVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                dorsalVal = sphereStiffness * thumbPenetrationVec;
-            }
-        }
-
-        /*Condition 3: Single Tactor Feedback to Index Finger on Dorsal Side*/
-        else if (trialNumber == 3)
-        {
-            if (indexPenetration <= 0.0f)
-            {
-                dorsalVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                dorsalVal = sphereStiffness * indexPenetrationVec;
-            }
-
-            ventralVal = Vector3.zero;
-        }
-
-        /*Condition 4: Average of both finger forces to single tactor on dorsal side*/
-        else if (trialNumber == 4)
-        {
-            if (indexPenetration <= 0.0f)
-            {
-                dorsalVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                dorsalVal = sphereStiffness * indexPenetrationVec;
-            }
-
-            if (thumbPenetration <= 0.0f)
-            {
-                ventralVal = Vector3.zero;
-            }
-            else
-            {
-                //Use Hooke's Law to find force
-                ventralVal = sphereStiffness * thumbPenetrationVec;
-                ventralVal = 0.5f * (ventralVal + dorsalVal);
-            }
-
-            ventralVal = Vector3.zero;
-        }
-
-        /*Experiment over*/
         else
         {
-            dorsalVal = Vector3.zero;
-            ventralVal = Vector3.zero;
+            //Use Hooke's Law to find penetration force of sphere on finger
+            indexPenetrationForce = sphereStiffness * indexPenetration;
+
+            //Add shear forces of sphere on finger due to friction
+            indexShearForce = fingerDamping * ( sphereVelocity - indexVelocity );
+
+            //Sum of forces of sphere on finger
+            indexForceVal = indexPenetrationForce + indexShearForce;
         }
 
-        forceValues[0] = dorsalVal;
-        forceValues[1] = ventralVal;
-        return forceValues;
+        if (thumbPenetrationMagSign <= 0.0f)
+        {
+            thumbPenetrationForce = Vector3.zero;
+            thumbShearForce = Vector3.zero;
+            thumbForceVal = Vector3.zero;
+        }
+        else
+        {
+            //Use Hooke's Law to find force of sphere on finger
+            thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
+            //Add shear forces of sphere on finger due to friction
+            thumbShearForce = fingerDamping * ( sphereVelocity- thumbVelocity );
+
+            //Sum of forces of sphere on finger
+            thumbForceVal = thumbPenetrationForce + thumbShearForce;
+        }
+
+        //Finger Force on sphere
+        forceValues[0] = -indexForceVal;
+        forceValues[1] = -thumbForceVal;
+        return forceValues;
     }
 
-    public Vector3 calculateNormalForce()
+    public Vector3 calculateFloorNormalForce()
     {
         //No contact with floor
         if (spherePosition.y > 0.5f * sphereScaleValue)
@@ -643,7 +544,7 @@ public class GameLogic : MonoBehaviour
         //Sphere penetrates floor but some portion is above floor
         else if (spherePosition.y <= 0.5f * sphereScaleValue && spherePosition.y >= -0.5f * sphereScaleValue)
         {
-            floorPenetration = 0.5f * sphereScaleValue + spherePosition.y;
+            floorPenetration = 0.5f * sphereScaleValue - spherePosition.y;
             return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
         }
         //sphere has completely broken through floor and normal should be practically infinite
@@ -654,41 +555,71 @@ public class GameLogic : MonoBehaviour
         }
     }
 
-    #region
-    //public float getIndexForce()
-    //{
-    //    return indexForce;
-    //}
-
-    //public float getThumbForce()
-    //{
-    //    return thumbForce;
-    //}
-    #endregion
-
-    public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 normalForce)
+    public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
     {
-        Vector3 positionPrev = spherePosition;
-        //Debug.Log("positionPrev: " + positionPrev.ToString());
-        Vector3 velocityPrev = sphereVelocity;
-        //Debug.Log("velocityPrev: " + velocityPrev.ToString());
-        Vector3 accelerationPrev = sphereAcceleration;
-        //Debug.Log("accelerationPrev: " + accelerationPrev.ToString());
+        Vector3 positionPrev = spherePosition; //Debug.Log("positionPrev: " + positionPrev.ToString());
+        Vector3 velocityPrev = sphereVelocity; //Debug.Log("velocityPrev: " + velocityPrev.ToString());
+        Vector3 accelerationPrev = sphereAcceleration; //Debug.Log("accelerationPrev: " + accelerationPrev.ToString());
 
-        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + normalForce - sphereDamping * velocityPrev) / rigidSphere.mass;
-        //Debug.Log("sphereAcceleration: " + sphereAcceleration.ToString());
+
+        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
         sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime; //velocityPrev + (accelerationPrev + sphereAcceleration) / (2.0f * Time.fixedDeltaTime); 
-        //Debug.Log("sphereVelocity: " + sphereVelocity.ToString());
         spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime; //positionPrev + (velocityPrev + sphereVelocity) / (2.0f * Time.fixedDeltaTime); 
-        //Debug.Log("spherePosition: " + spherePosition.ToString());
 
         return spherePosition;
     }
 
-    public float getFingerPositionCommand(float force)
+    public float[] getFingerPositionCommands(float indexForceMag, float thumbForceMag)
     {
-        /*penetration value in mm*/
-        return 1000 * (force / sphereStiffness);
+        float dorsalVal;
+        float ventralVal;
+
+        /*Condition 0: No Haptic Feebdack*/
+        if (trialNumber == 0)
+        {
+            dorsalVal = 0.0f;
+            ventralVal = 0.0f;
+        }
+
+        /*Condition 1: Index --> Dorsal | Thumb --> Ventral*/
+        else if (trialNumber == 1)
+        {
+            dorsalVal = 1000 * (indexForceMag / sphereStiffness);
+            ventralVal = 1000 * (thumbForceMag / sphereStiffness);
+        }
+
+        /*Condition 2: Index --> Ventral | Thumb --> Dorsal*/
+        else if (trialNumber == 2)
+        {
+            dorsalVal = 1000 * (thumbForceMag / sphereStiffness);
+            ventralVal = 1000 * (indexForceMag / sphereStiffness);
+        }
+
+        /*Condition 3: Single Tactor Feedback to Index Finger on Dorsal Side*/
+        else if (trialNumber == 3)
+        {
+            dorsalVal = 1000 * (indexForceMag / sphereStiffness);
+            ventralVal = 0.0f;
+        }
+
+        /*Condition 4: Average of both finger forces to single tactor on dorsal side*/
+        else if (trialNumber == 4)
+        {
+            dorsalVal = 500.0f * (indexForceMag + thumbForceMag) / sphereStiffness;
+            ventralVal = 0.0f;
+        }
+
+        /*Experiment over*/
+        else
+        {
+            dorsalVal = 0.0f;
+            ventralVal = 0.0f;
+        }
+
+        /*penetration values in mm*/
+        positionCommands[0] = dorsalVal;
+        positionCommands[1] = ventralVal;
+        return positionCommands;
     }
 
 }

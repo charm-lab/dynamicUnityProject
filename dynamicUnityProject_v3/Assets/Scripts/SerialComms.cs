@@ -66,8 +66,8 @@ public class SerialComms : MonoBehaviour
 
             if (currentTime - lastTime > 0.005)
             {
-                float num1 = player.GetComponent<GameLogic>().indexPositionCommand;
-                float num2 = player.GetComponent<GameLogic>().thumbPositionCommand;
+                float num1 = player.GetComponent<GameLogic>().dorsalCommand;
+                float num2 = player.GetComponent<GameLogic>().ventralCommand;
                 float num3 = currentTime;
                 int num4 = player.GetComponent<GameLogic>().trialNumber; // stop or trial number
 
@@ -137,9 +137,7 @@ public class SerialComms : MonoBehaviour
                     };
 
                 //Add data to the lists
-
                 string[] arduinoDataValsFinal = new string[] { arduinoDataVals[0], arduinoDataVals[1], arduinoElapsedTime.ToString() };
-
                 arduinoDataList.Add(arduinoDataValsFinal);
                 unityDataList.Add(unityDataVals);
 
@@ -232,7 +230,6 @@ public class SerialComms : MonoBehaviour
     //Send all valid data to CSV Manager to be saved and formatted to .csv
     private void saveDataToCSV(List<string[]> arduinoValidDataList, List<float[]> unityValidDataList)
     {
-        Debug.Log("arduinoValidDataList.Count = " + arduinoValidDataList.Count.ToString());
         //Get row of data and save it to .csv file
         for (int i = 0; i < arduinoValidDataList.Count; i++)
         {
@@ -248,7 +245,7 @@ public class SerialComms : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        Debug.Log("Raw Data Count = " + arduinoDataList.Count.ToString());
+        //Debug.Log("Raw Data Count = " + arduinoDataList.Count.ToString());
         Debug.Log("Validating Environment Data");
         List<string[]> arduinoValidDataList = validateArduinoData(arduinoDataList);
         List<float[]> unityValidDataList = validateUnityData(unityDataList);
