@@ -61,6 +61,7 @@ public class GameLogic : MonoBehaviour
     public Vector3 spherePosition;
     public Vector3 sphereVelocity;
     public Vector3 sphereAcceleration;
+    public Vector3 sphereForce;
     public Vector3 sphereOrientation;
     public float sphereScaleValue = 0.05f; //m
     public float sphereMass = 0.01f; //kg
@@ -561,8 +562,9 @@ public class GameLogic : MonoBehaviour
         Vector3 velocityPrev = sphereVelocity; //Debug.Log("velocityPrev: " + velocityPrev.ToString());
         Vector3 accelerationPrev = sphereAcceleration; //Debug.Log("accelerationPrev: " + accelerationPrev.ToString());
 
-
         sphereAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
+        sphereForce = sphereMass * sphereAcceleration;
+
         sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime; //velocityPrev + (accelerationPrev + sphereAcceleration) / (2.0f * Time.fixedDeltaTime); 
         spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime; //positionPrev + (velocityPrev + sphereVelocity) / (2.0f * Time.fixedDeltaTime); 
 
