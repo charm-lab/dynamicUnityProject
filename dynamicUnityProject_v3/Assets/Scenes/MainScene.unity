@@ -206,7 +206,7 @@ TerrainCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 551029655}
   m_Material: {fileID: 0}
-  m_Enabled: 1
+  m_Enabled: 0
   m_TerrainData: {fileID: 15600000, guid: 292a1c61de2adf547bb5d0fc613d6fa7, type: 2}
   m_EnableTreeColliders: 1
 --- !u!218 &551029657
@@ -524,9 +524,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7275b3c462f715c4ebebfdbdc8073137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  floorPenetration: 0
-  floorStiffness: 5000
-  floorNormalForce: {x: 0, y: 0, z: 0}
   indexPosition: {x: 0, y: 0, z: 0}
   indexVelocity: {x: 0, y: 0, z: 0}
   indexOrientation: {x: 0, y: 0, z: 0}
@@ -547,17 +544,21 @@ MonoBehaviour:
   thumbDistToCenter: 0
   thumbPenetrationMagSign: 0
   thumbScaleValue: 0.02
-  dorsalCommand: 0
-  ventralCommand: 0
   spherePosition: {x: 0, y: 0, z: 0}
   sphereVelocity: {x: 0, y: 0, z: 0}
   sphereAcceleration: {x: 0, y: 0, z: 0}
+  sphereForce: {x: 0, y: 0, z: 0}
   sphereOrientation: {x: 0, y: 0, z: 0}
   sphereScaleValue: 0.05
   sphereMass: 1
   sphereStiffness: 50
   sphereDamping: 5
   sphereWeight: 0
+  dorsalCommand: 0
+  ventralCommand: 0
+  floorPenetration: 0
+  floorStiffness: 5000
+  floorNormalForce: {x: 0, y: 0, z: 0}
   startingAreaPosition: {x: 0, y: 0, z: 0}
   startingAreaRadius: 0.2
   startingAreaHeight: 0

@@ -10,15 +10,6 @@ public class GameLogic : MonoBehaviour
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
     
-    [Header("Floor Variables")]
-    public float floorPenetration;
-    public float floorStiffness = 5000; // N/m
-    public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
-    
-    Vector3[] forceValues;
-    float[] positionCommands;
-    float fingerDamping = 50.0f;
-
     [Header("Index Variables")]
     public Vector3 indexPosition;
     public Vector3 indexVelocity;
@@ -47,10 +38,6 @@ public class GameLogic : MonoBehaviour
     Vector3 thumbPositionPrev;
     Vector3 thumbScaling;
 
-    [Header("Position Commands to Arduino")]
-    public float dorsalCommand;
-    public float ventralCommand;
-
     /**** Create SPHERE *****/
     GameObject sphere; //Instatiate Sphere GameObject
     MeshRenderer sphereMeshRenderer; //Declares Mesh Renderer
@@ -64,10 +51,23 @@ public class GameLogic : MonoBehaviour
     public Vector3 sphereForce;
     public Vector3 sphereOrientation;
     public float sphereScaleValue = 0.05f; //m
-    public float sphereMass = 0.01f; //kg
+    public float sphereMass = 1.0f; //kg
     public float sphereStiffness = 50.0f; //in N/m
     public float sphereDamping = 5.0f; //in N/m/s
     public float sphereWeight; //N scalar
+
+    [Header("Position Commands to Arduino")]
+    public float dorsalCommand;
+    public float ventralCommand;
+
+    [Header("Floor Variables")]
+    public float floorPenetration;
+    public float floorStiffness = 5000; // N/m
+    public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
+
+    Vector3[] forceValues;
+    float[] positionCommands;
+    float fingerDamping = 50.0f;
 
     /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
@@ -259,7 +259,8 @@ public class GameLogic : MonoBehaviour
         //sphereOrientation = sphere.transform.eulerAngles;
 
         //Derive Position Command from force calculation and assign 
-        positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexForce), Vector3.Magnitude(thumbForce));
+        positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexPenetrationForce), Vector3.Magnitude(thumbPenetrationForce));
+        //positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexForce), Vector3.Magnitude(thumbForce));
         dorsalCommand = positionCommands[0];
         ventralCommand = positionCommands[1];
 
@@ -498,7 +499,8 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * ( sphereVelocity - indexVelocity );
+            indexShearForce = fingerDamping * ( sphereVelocity - indexVelocity )
+                - new Vector3(0.0f, Vector3.Magnitude(indexPenetrationForce), 0.0f) ;
 
             //Sum of forces of sphere on finger
             indexForceVal = indexPenetrationForce + indexShearForce;
@@ -516,7 +518,8 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * ( sphereVelocity- thumbVelocity );
+            thumbShearForce = fingerDamping * ( sphereVelocity- thumbVelocity)
+                - new Vector3(0.0f, Vector3.Magnitude(thumbPenetrationForce), 0.0f);
 
             //Sum of forces of sphere on finger
             thumbForceVal = thumbPenetrationForce + thumbShearForce;
