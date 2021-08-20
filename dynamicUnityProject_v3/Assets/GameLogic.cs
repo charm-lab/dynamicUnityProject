@@ -9,7 +9,7 @@ public class GameLogic : MonoBehaviour
     GameObject indexSphere;
     GameObject thumbSphere;
     GameObject trakSTAROrigin;
-    
+
     [Header("Index Variables")]
     public Vector3 indexPosition;
     public Vector3 indexVelocity;
@@ -55,6 +55,9 @@ public class GameLogic : MonoBehaviour
     public float sphereStiffness = 50.0f; //in N/m
     public float sphereDamping = 5.0f; //in N/m/s
     public float sphereWeight; //N scalar
+    public float frictionCoeff = 50.0f; //N scalar
+    [Range(1.0f, 500.0f)]
+    public float fingerDamping = 50.0f; //in N/m/s
 
     [Header("Position Commands to Arduino")]
     public float dorsalCommand;
@@ -67,7 +70,7 @@ public class GameLogic : MonoBehaviour
 
     Vector3[] forceValues;
     float[] positionCommands;
-    float fingerDamping = 50.0f;
+
 
     /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
@@ -161,7 +164,7 @@ public class GameLogic : MonoBehaviour
 
         //Variable initializations
         indexVelocity = Vector3.zero;
-        thumbVelocity = Vector3.zero;        
+        thumbVelocity = Vector3.zero;
         indexPositionPrev = Vector3.zero;
         thumbPositionPrev = Vector3.zero;
         forceValues = new Vector3[] { Vector3.zero, Vector3.zero };
@@ -227,10 +230,10 @@ public class GameLogic : MonoBehaviour
         indexOrientation = indexSphere.transform.eulerAngles;
         thumbPosition = thumbSphere.transform.position;
         thumbOrientation = thumbSphere.transform.eulerAngles;
-        
+
         //Finger Velocity
-        indexVelocity = (indexPosition - indexPositionPrev)/ Time.fixedDeltaTime;
-        thumbVelocity = (thumbPosition - thumbPositionPrev)/ Time.fixedDeltaTime;
+        indexVelocity = (indexPosition - indexPositionPrev) / Time.fixedDeltaTime;
+        thumbVelocity = (thumbPosition - thumbPositionPrev) / Time.fixedDeltaTime;
 
         //Distance between centers of finger and sphere
         indexDistToCenter = Vector3.Magnitude(indexPosition - spherePosition);
@@ -239,7 +242,7 @@ public class GameLogic : MonoBehaviour
         //Magnitude and sign of Penetration of fingers into sphere
         //Positive --> Inside sphere | Negative --> Outside sphere
         indexPenetrationMagSign = 0.5f * (indexScaleValue + sphereScaleValue)
-                                    - indexDistToCenter; 
+                                    - indexDistToCenter;
         thumbPenetrationMagSign = 0.5f * (thumbScaleValue + sphereScaleValue)
                                     - thumbDistToCenter;
 
@@ -499,8 +502,9 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * ( sphereVelocity - indexVelocity )
-                - new Vector3(0.0f, Vector3.Magnitude(indexPenetrationForce), 0.0f) ;
+            indexShearForce = fingerDamping * (sphereVelocity - indexVelocity)
+                                + frictionCoeff * indexPenetrationForce;
+            //- new Vector3(0.0f, Vector3.Magnitude(indexPenetrationForce), 0.0f) ;
 
             //Sum of forces of sphere on finger
             indexForceVal = indexPenetrationForce + indexShearForce;
@@ -518,8 +522,9 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * ( sphereVelocity- thumbVelocity)
-                - new Vector3(0.0f, Vector3.Magnitude(thumbPenetrationForce), 0.0f);
+            thumbShearForce = fingerDamping * (sphereVelocity - thumbVelocity)
+                                + frictionCoeff * thumbPenetrationForce;
+            //- new Vector3(0.0f, Vector3.Magnitude(thumbPenetrationForce), 0.0f);
 
             //Sum of forces of sphere on finger
             thumbForceVal = thumbPenetrationForce + thumbShearForce;
@@ -561,15 +566,15 @@ public class GameLogic : MonoBehaviour
 
     public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
     {
-        Vector3 positionPrev = spherePosition; //Debug.Log("positionPrev: " + positionPrev.ToString());
-        Vector3 velocityPrev = sphereVelocity; //Debug.Log("velocityPrev: " + velocityPrev.ToString());
-        Vector3 accelerationPrev = sphereAcceleration; //Debug.Log("accelerationPrev: " + accelerationPrev.ToString());
+        Vector3 positionPrev = spherePosition;
+        Vector3 velocityPrev = sphereVelocity;
+        Vector3 accelerationPrev = sphereAcceleration;
 
         sphereAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
         sphereForce = sphereMass * sphereAcceleration;
 
-        sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime; //velocityPrev + (accelerationPrev + sphereAcceleration) / (2.0f * Time.fixedDeltaTime); 
-        spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime; //positionPrev + (velocityPrev + sphereVelocity) / (2.0f * Time.fixedDeltaTime); 
+        sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime;
+        spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime;
 
         return spherePosition;
     }
