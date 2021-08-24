@@ -3,13 +3,13 @@
 clear; close all; clc;
 
 folderPath = "C:\Users\Jasmin\Documents\OneDrive - Stanford\Unity Reseach Project\dynamicUnityProject\dynamicUnityProject_v3\Assets\Report_Tests\";
-fileName = "report_08-20-2021 10-03-09-15";
+fileName = "report_08-24-2021 11-34-53-44";
 fileToRead = folderPath + fileName + ".csv";
 
 report = xlsread(fileToRead);
 
 %Choose rows of interest
-startRow = 540; endRow = 650;
+startRow = 1; endRow =  size(report,1);
 
 % Variables to be plotted
 time = report(startRow:endRow, 1);
@@ -24,11 +24,11 @@ improvePlot;
 for i = 1:size(time,1) 
     
     % plot point
-    plot3(sphereX(i),sphereZ(i),sphereY(i),"bo", "LineWidth", 8 );  
+    plot3(sphereX(i),sphereZ(i),sphereY(i),"bo", "LineWidth", 15 );  
     
     %** Y and Z values swapped to account for Unity LH coordinate system**%
     % Set axis limits
-    xlim([-5 5]); ylim([-5 5]); zlim([0 5]);
+    xlim([-1 1]); ylim([-1 1]); zlim([0 5]);
     
     % Set axis labels
     xlabel("spherePositionX [m]"); 
@@ -39,7 +39,7 @@ for i = 1:size(time,1)
     xticks(-5:1:5); yticks(-5:1:5); zticks(0:1:5);
     
     % Adjust plot camera properties
-    campos([75,20,20]); camva(9.5);
+    campos([10, 8, 30]); camva(10);
     
     % Add box and grid
     box on; grid on; 
@@ -55,7 +55,7 @@ for i = 1:size(time,1)
     
     drawnow
     % wait a bit
-    pause(0.001)          
+    %pause(0.0001)          
 
 end
 

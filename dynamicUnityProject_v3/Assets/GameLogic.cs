@@ -53,9 +53,11 @@ public class GameLogic : MonoBehaviour
     public float sphereScaleValue = 0.05f; //m
     public float sphereMass = 1.0f; //kg
     public float sphereStiffness = 50.0f; //in N/m
-    public float sphereDamping = 5.0f; //in N/m/s
     public float sphereWeight; //N scalar
-    public float frictionCoeff = 50.0f; //N scalar
+    [Range(1.0f, 500.0f)]
+    public float sphereDamping = 50.0f; //in N/m/s
+    [Range(1.0f, 500.0f)]
+    public float fingerFrictionCoeff = 50.0f; //N scalar
     [Range(1.0f, 500.0f)]
     public float fingerDamping = 50.0f; //in N/m/s
 
@@ -262,8 +264,8 @@ public class GameLogic : MonoBehaviour
         //sphereOrientation = sphere.transform.eulerAngles;
 
         //Derive Position Command from force calculation and assign 
-        positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexPenetrationForce), Vector3.Magnitude(thumbPenetrationForce));
-        //positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexForce), Vector3.Magnitude(thumbForce));
+        //positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexPenetrationForce), Vector3.Magnitude(thumbPenetrationForce));
+        positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexForce), Vector3.Magnitude(thumbForce));
         dorsalCommand = positionCommands[0];
         ventralCommand = positionCommands[1];
 
@@ -502,8 +504,8 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * (sphereVelocity - indexVelocity)
-                                + frictionCoeff * indexPenetrationForce;
+            indexShearForce = fingerDamping * (sphereVelocity - indexVelocity) - (fingerDamping * sphereVelocity)
+                                + fingerFrictionCoeff * indexPenetrationForce;
             //- new Vector3(0.0f, Vector3.Magnitude(indexPenetrationForce), 0.0f) ;
 
             //Sum of forces of sphere on finger
@@ -522,8 +524,8 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * (sphereVelocity - thumbVelocity)
-                                + frictionCoeff * thumbPenetrationForce;
+            thumbShearForce = fingerDamping * (sphereVelocity - thumbVelocity) - (fingerDamping * sphereVelocity)
+                                + fingerFrictionCoeff * thumbPenetrationForce;
             //- new Vector3(0.0f, Vector3.Magnitude(thumbPenetrationForce), 0.0f);
 
             //Sum of forces of sphere on finger

@@ -11,8 +11,8 @@ const int digitalPinNum1 = 9; //Digital pin from VR computer - for Servo1
 const int digitalPinNum2 = 10; //Digital pin from VR computer - for Servo2
 const double REF_VALUE = 0.00; //Reference value of system | Triggers restart of code
 const double ERROR_THRESHOLD = 1.00; //Maximum allowable value for position error
-//const double maxDistanceExtend = 20.0; //max distance the pusher can move
-//const double maxDistanceContract = 0.00; //max distance the pusher can move  after being extended
+const double MAX_DISTANCE_EXTEND = 20.0; //max distance the tactor can move
+//const double maxDistanceContract = 0.00; //max distance the tactor can move  after being extended
 
 /*Other Global Variables*/
 double degreeIncrement; // Controls how fast we want theta to change
@@ -71,8 +71,6 @@ void setup() {
 }
 
 void loop() {
-
-
   //Receives command from Unity via Serial
   receiveSerial();
 
@@ -92,7 +90,6 @@ void loop() {
 
   //Prep Data for Processing:
   Serial.println((String)finalPosition1 + "," + (String)finalPosition2);
-
 }
 
 /********************************************************
@@ -115,5 +112,15 @@ void receiveSerial() {
    
     desiredPos1 = inByte1.toDouble();
     desiredPos2 = inByte2.toDouble();
+
+    //Cap movable distance
+    if(desiredPos1 > MAX_DISTANCE_EXTEND)
+    {
+      desiredPos1 = MAX_DISTANCE_EXTEND; 
+    }
+    if(desiredPos2 > MAX_DISTANCE_EXTEND)
+    {
+      desiredPos2 = MAX_DISTANCE_EXTEND; 
+    }
   }
 }
