@@ -492,6 +492,9 @@ public class GameLogic : MonoBehaviour
         Vector3 indexForceVal;
         Vector3 thumbForceVal;
 
+        Vector3 indexRelVelocity = sphereVelocity - indexVelocity;
+        Vector3 thumbRelVelocity = sphereVelocity - thumbVelocity;
+
         if (indexPenetrationMagSign <= 0.0f)
         {
             indexPenetrationForce = Vector3.zero;
@@ -504,9 +507,7 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * (sphereVelocity - indexVelocity) - (fingerDamping * sphereVelocity)
-                                + fingerFrictionCoeff * indexPenetrationForce;
-            //- new Vector3(0.0f, Vector3.Magnitude(indexPenetrationForce), 0.0f) ;
+            indexShearForce = fingerDamping * indexRelVelocity + fingerFrictionCoeff * indexPenetrationForce;
 
             //Sum of forces of sphere on finger
             indexForceVal = indexPenetrationForce + indexShearForce;
@@ -524,9 +525,7 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * (sphereVelocity - thumbVelocity) - (fingerDamping * sphereVelocity)
-                                + fingerFrictionCoeff * thumbPenetrationForce;
-            //- new Vector3(0.0f, Vector3.Magnitude(thumbPenetrationForce), 0.0f);
+            thumbShearForce = fingerDamping * thumbRelVelocity + fingerFrictionCoeff * thumbPenetrationForce;
 
             //Sum of forces of sphere on finger
             thumbForceVal = thumbPenetrationForce + thumbShearForce;
