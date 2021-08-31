@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
+using System;
 
 public class GameLogic : MonoBehaviour
 {
@@ -51,15 +52,18 @@ public class GameLogic : MonoBehaviour
     public Vector3 sphereForce;
     public Vector3 sphereOrientation;
     public float sphereScaleValue = 0.05f; //m
-    public float sphereMass = 1.0f; //kg
-    public float sphereStiffness = 50.0f; //in N/m
+    public float sphereMass = 0.5f; //kg
+    public float sphereStiffness = 500.0f; //in N/m
     public float sphereWeight; //N scalar
     [Range(1.0f, 500.0f)]
-    public float sphereDamping = 50.0f; //in N/m/s
+    public float sphereDamping = 10.0f; //in N/m/s
     [Range(1.0f, 500.0f)]
     public float fingerFrictionCoeff = 50.0f; //N scalar
     [Range(1.0f, 500.0f)]
     public float fingerDamping = 50.0f; //in N/m/s
+    float stribeckVelocity = 0.1f; // in m/s
+    float uS = 0.5f; // Coefficient of static friction sphere-finger [-]
+    float uK = 0.2f; // Coefficient of kinetic friction sphere-finger [-]
 
     [Header("Position Commands to Arduino")]
     public float dorsalCommand;
@@ -72,7 +76,6 @@ public class GameLogic : MonoBehaviour
 
     Vector3[] forceValues;
     float[] positionCommands;
-
 
     /**** Create STARTINGAREA *****/
     GameObject startingArea; //Instatiate StartingArea GameObject
@@ -144,8 +147,9 @@ public class GameLogic : MonoBehaviour
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = Vector3.zero;
 
-        indexSphere.GetComponent<MeshRenderer>().material.color = Color.red;
-        thumbSphere.GetComponent<MeshRenderer>().material.color = Color.cyan;
+        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 0.5f); 
+        setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 0.5f); 
+
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
         indexScaling = new Vector3(indexScaleValue, indexScaleValue, indexScaleValue);
@@ -200,22 +204,12 @@ public class GameLogic : MonoBehaviour
         if (passedWaypoint)
         {
             //Make opaque
-            waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 1.0f));
-            waypointMeshRenderer.material.SetFloat("_Mode", 3);
-            waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
-            waypointMeshRenderer.material.renderQueue = 3000;
+            setObjectColor(waypointMeshRenderer, 0.5f, 0.5f, 0.0f, 1.0f);
         }
         else
         {
             //Keep translucent
-            waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 0.5f));
-            waypointMeshRenderer.material.SetFloat("_Mode", 3);
-            waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
-            waypointMeshRenderer.material.renderQueue = 3000;
+            setObjectColor(waypointMeshRenderer, 0.5f, 0.5f, 0.0f, 0.5f);
         }
     }
 
@@ -349,7 +343,7 @@ public class GameLogic : MonoBehaviour
 
         //Set Sphere mesh properties
         sphereMeshRenderer = sphere.GetComponent<MeshRenderer>();
-        sphereMeshRenderer.material.color = Color.blue;
+        setObjectColor(sphereMeshRenderer, 0.0f, 0.0f, 1.0f, 0.5f);
 
         sphereWeight = sphereMass * Vector3.Magnitude(Physics.gravity);
     }
@@ -492,8 +486,11 @@ public class GameLogic : MonoBehaviour
         Vector3 indexForceVal;
         Vector3 thumbForceVal;
 
-        Vector3 indexRelVelocity = sphereVelocity - indexVelocity;
-        Vector3 thumbRelVelocity = sphereVelocity - thumbVelocity;
+        Vector3 indexRelVelocity = indexVelocity - sphereVelocity; //sphereVelocity - indexVelocity;
+        Vector3 thumbRelVelocity = thumbVelocity - sphereVelocity; //sphereVelocity - thumbVelocity;
+
+        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPenetration);
+        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPenetration);
 
         if (indexPenetrationMagSign <= 0.0f)
         {
@@ -507,10 +504,13 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * indexRelVelocity + fingerFrictionCoeff * indexPenetrationForce;
+            indexShearForce = //getFrictionForce(indexRelVelocity, stribeckVelocity, uK * indexPenetrationForce, uS * indexPenetrationForce);
+                              //fingerDamping * indexRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
+                              fingerDamping * indexRelVelocity/**/;
 
             //Sum of forces of sphere on finger
-            indexForceVal = indexPenetrationForce + indexShearForce;
+            //indexForceVal = indexPenetrationForce + indexShearForce;
+            indexForceVal = indexPenetrationForce;
         }
 
         if (thumbPenetrationMagSign <= 0.0f)
@@ -525,10 +525,13 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * thumbRelVelocity + fingerFrictionCoeff * thumbPenetrationForce;
+            thumbShearForce = //getFrictionForce(thumbRelVelocity, stribeckVelocity, uK * thumbPenetrationForce, uS * thumbPenetrationForce);
+                              //fingerDamping * thumbRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
+                           fingerDamping * thumbRelVelocity/**/;
 
             //Sum of forces of sphere on finger
-            thumbForceVal = thumbPenetrationForce + thumbShearForce;
+            //thumbForceVal = thumbPenetrationForce + thumbShearForce;
+            thumbForceVal = thumbPenetrationForce;
         }
 
         //Finger Force on sphere
@@ -539,6 +542,18 @@ public class GameLogic : MonoBehaviour
 
     public Vector3 calculateFloorNormalForce()
     {
+        if (spherePosition.y < 0.5f * sphereScaleValue)
+        {
+            floorPenetration = 0.5f * sphereScaleValue - spherePosition.y;
+        }
+        else
+        {
+            floorPenetration = 0.0f;
+        }
+        return new Vector3(0.0f, sphereStiffness * floorPenetration, 0.0f);
+
+        #region
+        /*
         //No contact with floor
         if (spherePosition.y > 0.5f * sphereScaleValue)
         {
@@ -563,6 +578,8 @@ public class GameLogic : MonoBehaviour
             floorPenetration = -spherePosition.y + 0.5f * sphereScaleValue;
             return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
         }
+        */
+        #endregion
     }
 
     public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
@@ -633,4 +650,49 @@ public class GameLogic : MonoBehaviour
         return positionCommands;
     }
 
+    public Vector3 getFrictionForce(Vector3 fingerRelVelocity, float stribeckVelocity, Vector3 coulombFrictionForce, Vector3 staticFrictionForce)
+    {
+        Vector3 sgn_vT = sign(fingerRelVelocity);
+        float vT = Vector3.Magnitude(fingerRelVelocity);
+        float vS = stribeckVelocity;
+        float Fc = Vector3.Magnitude(coulombFrictionForce);
+        float Fs = Vector3.Magnitude(staticFrictionForce);
+
+        float Ff_Mag = Fc * (float)Math.Tanh((double)(4 * vT / vS))
+            + (Fs - Fc) * (vT / vS) / (Mathf.Pow(0.25f * Mathf.Pow((vT / vS), 2.0f) + 0.75f, 2.0f));
+
+        Vector3 Ff = Ff_Mag * sgn_vT;
+        return Ff;
+    }
+
+    public Vector3 getShearVelocity(Vector3 vRel, Vector3 penetration)
+    {
+        Vector3 normal = penetration; //vecotr normal to the plane of the instersceting spheres
+
+        Vector3 shearVelocity = Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow( Vector3.Magnitude(normal), 2.0f);
+
+        return shearVelocity;
+    }
+
+    public Vector3 sign(Vector3 x)
+    {
+        if (Vector3.Magnitude(x) != 0.0f)
+        {
+            return x / Vector3.Magnitude(x);
+        }
+        else
+        {
+            return Vector3.zero;
+        }
+    }
+
+    private void setObjectColor(MeshRenderer mesh, float r, float g, float b, float alpha)
+    {
+        mesh.material.SetColor("_Color", new Color(r, g, b, alpha));
+        mesh.material.SetFloat("_Mode", 3);
+        mesh.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mesh.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mesh.material.EnableKeyword("_ALPHABLEND_ON");
+        mesh.material.renderQueue = 3000;
+    }
 }

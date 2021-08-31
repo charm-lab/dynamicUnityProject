@@ -550,10 +550,12 @@ MonoBehaviour:
   sphereForce: {x: 0, y: 0, z: 0}
   sphereOrientation: {x: 0, y: 0, z: 0}
   sphereScaleValue: 0.05
-  sphereMass: 1
-  sphereStiffness: 50
-  sphereDamping: 5
+  sphereMass: 0.5
+  sphereStiffness: 500
   sphereWeight: 0
+  sphereDamping: 10
+  fingerFrictionCoeff: 50
+  fingerDamping: 50
   dorsalCommand: 0
   ventralCommand: 0
   floorPenetration: 0
