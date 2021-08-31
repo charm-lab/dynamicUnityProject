@@ -136,6 +136,9 @@ public class GameLogic : MonoBehaviour
 
     #endregion
 
+    LineRenderer indexLineRenderer;
+    LineRenderer thumbLineRenderer;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -147,8 +150,8 @@ public class GameLogic : MonoBehaviour
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = Vector3.zero;
 
-        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 0.5f); 
-        setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 0.5f); 
+        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 0.5f);
+        setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 0.5f);
 
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
@@ -177,6 +180,10 @@ public class GameLogic : MonoBehaviour
         positionCommands = new float[] { 0.0f, 0.0f };
         floorNormalForce = Vector3.zero;
         trialNumber = 1;
+
+        //create Shear Velocity Vector lines
+        indexLineRenderer = indexSphere.AddComponent<LineRenderer>();
+        thumbLineRenderer = thumbSphere.AddComponent<LineRenderer>();
     }
 
     // Update is called once per frame
@@ -385,15 +392,10 @@ public class GameLogic : MonoBehaviour
         startingAreaMeshRenderer = startingArea.GetComponent<MeshRenderer>();
 
         //Set Color and Transparaency
-        #region StartColor
-        startingAreaMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0f, 1.0f, 0.5f));
-        startingAreaMeshRenderer.material.SetFloat("_Mode", 3);
-        startingAreaMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        startingAreaMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        startingAreaMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
-        startingAreaMeshRenderer.material.renderQueue = 3000;
-        #endregion StartColor
+        setObjectColor(startingAreaMeshRenderer, 0.5f, 0.0f, 1.0f, 0.5f);
 
+        //Hide -- TEMPORARY
+        startingAreaMeshRenderer.enabled = false;
     }
 
     public void createTargetArea(float startingX, float startingZ)
@@ -414,16 +416,8 @@ public class GameLogic : MonoBehaviour
         //Set mesh properties
         targetAreaMeshRenderer = targetArea.GetComponent<MeshRenderer>();
 
-        //Set Color and Transparaency
-        #region TargetColor
-        targetAreaMeshRenderer.material.SetColor("_Color", new Color(0.4f, 0.6f, 0.1f, 0.5f));
-        targetAreaMeshRenderer.material.SetFloat("_Mode", 3);
-        targetAreaMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        targetAreaMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        targetAreaMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
-        targetAreaMeshRenderer.material.renderQueue = 3000;
-        #endregion TargetColor
-
+        //Set Color and Transparency
+        setObjectColor(targetAreaMeshRenderer, 0.4f, 0.6f, 0.1f, 0.5f);
     }
 
     public void createWaypoint(float startingX)
@@ -442,14 +436,7 @@ public class GameLogic : MonoBehaviour
         waypointMeshRenderer = waypoint.GetComponent<MeshRenderer>();
 
         //Set Color and Transparency
-        #region WaypointColor
-        waypointMeshRenderer.material.SetColor("_Color", new Color(0.5f, 0.5f, 0.0f, 0.5f));
-        waypointMeshRenderer.material.SetFloat("_Mode", 3);
-        waypointMeshRenderer.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        waypointMeshRenderer.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        waypointMeshRenderer.material.EnableKeyword("_ALPHABLEND_ON");
-        waypointMeshRenderer.material.renderQueue = 3000;
-        #endregion WaypointColor
+        setObjectColor(waypointMeshRenderer, 0.5f, 0.5f, 0.0f, 0.5f);
     }
 
     public bool checkWaypoint()
@@ -504,9 +491,12 @@ public class GameLogic : MonoBehaviour
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = //getFrictionForce(indexRelVelocity, stribeckVelocity, uK * indexPenetrationForce, uS * indexPenetrationForce);
-                              //fingerDamping * indexRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
-                              fingerDamping * indexRelVelocity/**/;
+            indexShearForce = fingerDamping * indexShearVelocity/**/;
+            //getFrictionForce(indexRelVelocity, stribeckVelocity, uK * indexPenetrationForce, uS * indexPenetrationForce);
+            //fingerDamping * indexRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
+
+            drawShearVelocityVector(indexPenetration, indexPosition - spherePosition, 
+                0.5f * sphereScaleValue, 0.5f * indexScaleValue, indexLineRenderer);
 
             //Sum of forces of sphere on finger
             //indexForceVal = indexPenetrationForce + indexShearForce;
@@ -525,9 +515,12 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = //getFrictionForce(thumbRelVelocity, stribeckVelocity, uK * thumbPenetrationForce, uS * thumbPenetrationForce);
-                              //fingerDamping * thumbRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
-                           fingerDamping * thumbRelVelocity/**/;
+            thumbShearForce = fingerDamping * thumbShearVelocity/**/;
+            //getFrictionForce(thumbRelVelocity, stribeckVelocity, uK * thumbPenetrationForce, uS * thumbPenetrationForce);
+            //fingerDamping * thumbRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
+            
+            drawShearVelocityVector(thumbPenetration, thumbPosition - spherePosition,
+                0.5f * sphereScaleValue, 0.5f * thumbScaleValue, thumbLineRenderer);
 
             //Sum of forces of sphere on finger
             //thumbForceVal = thumbPenetrationForce + thumbShearForce;
@@ -667,11 +660,29 @@ public class GameLogic : MonoBehaviour
 
     public Vector3 getShearVelocity(Vector3 vRel, Vector3 penetration)
     {
-        Vector3 normal = penetration; //vecotr normal to the plane of the instersceting spheres
+        //vector normal to the plane of the instersceting spheres
+        Vector3 normal = penetration;
+        float normalMag = Vector3.Magnitude(normal);
 
-        Vector3 shearVelocity = Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow( Vector3.Magnitude(normal), 2.0f);
+        Vector3 shearVelocity = -Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow(normalMag, 2.0f);
 
         return shearVelocity;
+    }
+
+    public void drawShearVelocityVector(Vector3 penetration, Vector3 distanceVec, float sphereRadius, float fingerRadius, LineRenderer fingerLine)
+    {
+        //vector distance between centers instersceting spheres
+        float distanceMag = Vector3.Magnitude(distanceVec);
+        Vector3 distanceVec_hat = distanceVec / Vector3.Magnitude(distanceVec);
+
+        float sphereCenterToIntersectionPoint = (Mathf.Pow(sphereRadius, 2.0f) - Mathf.Pow(fingerRadius, 2.0f) + Mathf.Pow(distanceMag, 2.0f))
+                                                                        / (2.0f * distanceMag);
+        Vector3 intersectionPoint = spherePosition + sphereCenterToIntersectionPoint * distanceVec_hat;
+
+        fingerLine.SetPosition(0, intersectionPoint);
+        fingerLine.SetPosition(1, intersectionPoint + penetration);
+        fingerLine.SetWidth(0.01f, 0.01f);
+
     }
 
     public Vector3 sign(Vector3 x)
