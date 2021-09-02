@@ -469,7 +469,7 @@ public class GameLogic : MonoBehaviour
 
     public Vector3[] calculateFingerForceValues(Vector3 indexPenetration, Vector3 thumbPenetration,
         float indexPenetrationMagSign, float thumbPenetrationMagSign)
-    {
+    { 
         Vector3 indexForceVal;
         Vector3 thumbForceVal;
 
@@ -485,7 +485,7 @@ public class GameLogic : MonoBehaviour
             indexShearForce = Vector3.zero;
             indexForceVal = Vector3.zero;
         }
-        else
+        else 
         {
             //Use Hooke's Law to find penetration force of sphere on finger
             indexPenetrationForce = sphereStiffness * indexPenetration;
@@ -495,7 +495,7 @@ public class GameLogic : MonoBehaviour
             //getFrictionForce(indexRelVelocity, stribeckVelocity, uK * indexPenetrationForce, uS * indexPenetrationForce);
             //fingerDamping * indexRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
 
-            drawShearVelocityVector(indexPenetration, indexPosition - spherePosition, 
+            drawShearVelocityVector(indexShearVelocity, indexPosition - spherePosition, 
                 0.5f * sphereScaleValue, 0.5f * indexScaleValue, indexLineRenderer);
 
             //Sum of forces of sphere on finger
@@ -519,7 +519,7 @@ public class GameLogic : MonoBehaviour
             //getFrictionForce(thumbRelVelocity, stribeckVelocity, uK * thumbPenetrationForce, uS * thumbPenetrationForce);
             //fingerDamping * thumbRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
             
-            drawShearVelocityVector(thumbPenetration, thumbPosition - spherePosition,
+            drawShearVelocityVector(thumbShearVelocity, thumbPosition - spherePosition,
                 0.5f * sphereScaleValue, 0.5f * thumbScaleValue, thumbLineRenderer);
 
             //Sum of forces of sphere on finger
@@ -669,7 +669,7 @@ public class GameLogic : MonoBehaviour
         return shearVelocity;
     }
 
-    public void drawShearVelocityVector(Vector3 penetration, Vector3 distanceVec, float sphereRadius, float fingerRadius, LineRenderer fingerLine)
+    public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float sphereRadius, float fingerRadius, LineRenderer fingerLine)
     {
         //vector distance between centers instersceting spheres
         float distanceMag = Vector3.Magnitude(distanceVec);
@@ -678,9 +678,10 @@ public class GameLogic : MonoBehaviour
         float sphereCenterToIntersectionPoint = (Mathf.Pow(sphereRadius, 2.0f) - Mathf.Pow(fingerRadius, 2.0f) + Mathf.Pow(distanceMag, 2.0f))
                                                                         / (2.0f * distanceMag);
         Vector3 intersectionPoint = spherePosition + sphereCenterToIntersectionPoint * distanceVec_hat;
-
+        
+        fingerLine.useWorldSpace = true;
         fingerLine.SetPosition(0, intersectionPoint);
-        fingerLine.SetPosition(1, intersectionPoint + penetration);
+        fingerLine.SetPosition(1, intersectionPoint + shearVelocity);
         fingerLine.SetWidth(0.01f, 0.01f);
 
     }
