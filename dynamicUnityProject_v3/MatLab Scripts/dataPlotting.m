@@ -3,13 +3,13 @@
 clear; close all; clc;
 
 folderPath = "C:\Users\Jasmin\Documents\OneDrive - Stanford\Unity Reseach Project\dynamicUnityProject\dynamicUnityProject_v3\Assets\Report_Tests\";
-fileName = "report_08-24-2021 11-34-53-44";
+fileName = "report_09-03-2021 12-07-19-73";
 fileToRead = folderPath + fileName + ".csv";
 
 report = xlsread(fileToRead);
 
 %Choose rows of interest
-startRow = 1; endRow =  size(report,1);
+startRow = 720; endRow =  size(report,1);
 
 % Variables to be plotted
 time = report(startRow:endRow, 1);
@@ -19,16 +19,18 @@ sphereZ = report(startRow:endRow, 20);
 
 figure(1);
 
+% Define sphere surface
+[X, Y, Z] = sphere; rs = 0.05;
 improvePlot;
 
 for i = 1:size(time,1) 
-    
-    % plot point
-    plot3(sphereX(i),sphereZ(i),sphereY(i),"bo", "LineWidth", 15 );  
+    % Plot sphere
+    surf(X*rs + sphereX(i), Y*rs + sphereZ(i),Z*rs + sphereY(i),...
+    'FaceColor', [0 0 1],'FaceAlpha',0.2);
     
     %** Y and Z values swapped to account for Unity LH coordinate system**%
     % Set axis limits
-    xlim([-1 1]); ylim([-1 1]); zlim([0 5]);
+    xlim([-1 1]); ylim([-1 1]); zlim([0 2]);
     
     % Set axis labels
     xlabel("spherePositionX [m]"); 
@@ -39,7 +41,7 @@ for i = 1:size(time,1)
     xticks(-5:1:5); yticks(-5:1:5); zticks(0:1:5);
     
     % Adjust plot camera properties
-    campos([10, 8, 30]); camva(10);
+    campos([15,8,4]); camva(10);
     
     % Add box and grid
     box on; grid on; 

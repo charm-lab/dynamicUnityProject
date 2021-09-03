@@ -555,7 +555,8 @@ MonoBehaviour:
   sphereWeight: 0
   sphereDamping: 10
   fingerFrictionCoeff: 50
-  fingerDamping: 50
+  fingerDamping: 10
+  uK: 0
   dorsalCommand: 0
   ventralCommand: 0
   floorPenetration: 0
