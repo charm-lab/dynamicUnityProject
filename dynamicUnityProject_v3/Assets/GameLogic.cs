@@ -74,6 +74,7 @@ public class GameLogic : MonoBehaviour
     public float floorStiffness = 5000; // N/m
     public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
 
+    public Vector3[] sphereStatus;
     Vector3[] forceValues;
     float[] positionCommands;
 
@@ -138,6 +139,7 @@ public class GameLogic : MonoBehaviour
 
     LineRenderer indexLineRenderer;
     LineRenderer thumbLineRenderer;
+    LineRenderer sphereLineRenderer;
 
     // Start is called before the first frame update
     void Start()
@@ -150,8 +152,8 @@ public class GameLogic : MonoBehaviour
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = Vector3.zero;
 
-        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 0.5f);
-        setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 0.5f);
+        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 1.0f);
+        setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 1.0f);
 
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
@@ -176,6 +178,7 @@ public class GameLogic : MonoBehaviour
         thumbVelocity = Vector3.zero;
         indexPositionPrev = Vector3.zero;
         thumbPositionPrev = Vector3.zero;
+        sphereStatus = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         forceValues = new Vector3[] { Vector3.zero, Vector3.zero };
         positionCommands = new float[] { 0.0f, 0.0f };
         floorNormalForce = Vector3.zero;
@@ -254,15 +257,21 @@ public class GameLogic : MonoBehaviour
         thumbPenetration = thumbPenetrationMagSign * (thumbPosition - spherePosition) / thumbDistToCenter;
 
         //Force Calculation
-        forceValues = calculateFingerForceValues(indexPenetration, thumbPenetration,
+        forceValues = calculateFingerForceValues(sphereVelocity, indexVelocity, thumbVelocity,
+            spherePosition, indexPosition, thumbPosition, indexPenetration, thumbPenetration,
             indexPenetrationMagSign, thumbPenetrationMagSign);
         indexForce = forceValues[0];
         thumbForce = forceValues[1];
         floorNormalForce = calculateFloorNormalForce();
 
         //Sphere Pose
-        sphere.transform.position = getSpherePosition(indexForce, thumbForce, floorNormalForce);
+        sphereStatus = getSphereStatus(spherePosition, sphereVelocity, sphereAcceleration,
+                       indexForce, thumbForce, floorNormalForce);
+        spherePosition = sphereStatus[0];
+        sphere.transform.position = spherePosition;
         //sphereOrientation = sphere.transform.eulerAngles;
+        sphereVelocity = sphereStatus[1];
+        sphereAcceleration = sphereStatus[2];
 
         //Derive Position Command from force calculation and assign 
         //positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexPenetrationForce), Vector3.Magnitude(thumbPenetrationForce));
@@ -284,6 +293,10 @@ public class GameLogic : MonoBehaviour
 
         //Determine successes/fails
         //trialLogic();
+
+        //Debug.Log("sphereAcceleration: " + sphereAcceleration);
+        //Debug.Log("sphereVelocity: " + sphereVelocity);
+        //Debug.Log("spherePosition: " + spherePosition);
     }
 
     public void checkTrialProgress()
@@ -330,7 +343,6 @@ public class GameLogic : MonoBehaviour
 
     }
 
-    //Create Sphere GameObject:
     public void createSphere(float startingX, float startingZ)
     {
         //Sphere Object Definition
@@ -350,9 +362,11 @@ public class GameLogic : MonoBehaviour
 
         //Set Sphere mesh properties
         sphereMeshRenderer = sphere.GetComponent<MeshRenderer>();
-        setObjectColor(sphereMeshRenderer, 0.0f, 0.0f, 1.0f, 0.5f);
+        setObjectColor(sphereMeshRenderer, 0.0f, 0.0f, 1.0f, 1.0f);
 
         sphereWeight = sphereMass * Vector3.Magnitude(Physics.gravity);
+
+        sphereLineRenderer = sphere.AddComponent<LineRenderer>();
     }
 
     public void resetSphere()
@@ -467,17 +481,18 @@ public class GameLogic : MonoBehaviour
         return isSphereInTarget;
     }
 
-    public Vector3[] calculateFingerForceValues(Vector3 indexPenetration, Vector3 thumbPenetration,
-        float indexPenetrationMagSign, float thumbPenetrationMagSign)
-    { 
+    public Vector3[] calculateFingerForceValues(Vector3 sphereVelocity, Vector3 indexVelocity, Vector3 thumbVelocity,
+        Vector3 spherePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 indexPenetration, Vector3 thumbPenetration,
+         float indexPenetrationMagSign, float thumbPenetrationMagSign)
+    {
         Vector3 indexForceVal;
         Vector3 thumbForceVal;
 
         Vector3 indexRelVelocity = indexVelocity - sphereVelocity; //sphereVelocity - indexVelocity;
         Vector3 thumbRelVelocity = thumbVelocity - sphereVelocity; //sphereVelocity - thumbVelocity;
 
-        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPenetration);
-        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPenetration);
+        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPosition - spherePosition);
+        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPosition - spherePosition);
 
         if (indexPenetrationMagSign <= 0.0f)
         {
@@ -485,22 +500,23 @@ public class GameLogic : MonoBehaviour
             indexShearForce = Vector3.zero;
             indexForceVal = Vector3.zero;
         }
-        else 
+        else
         {
             //Use Hooke's Law to find penetration force of sphere on finger
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            indexShearForce = fingerDamping * indexShearVelocity/**/;
+            indexShearForce = fingerDamping * indexShearVelocity + Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
             //getFrictionForce(indexRelVelocity, stribeckVelocity, uK * indexPenetrationForce, uS * indexPenetrationForce);
             //fingerDamping * indexRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(indexPenetrationForce) * sign(indexRelVelocity)/**/;
 
-            drawShearVelocityVector(indexShearVelocity, indexPosition - spherePosition, 
+            /*For debugging*/
+            drawShearVelocityVector(indexShearVelocity, indexPosition - spherePosition,
                 0.5f * sphereScaleValue, 0.5f * indexScaleValue, indexLineRenderer);
 
             //Sum of forces of sphere on finger
-            //indexForceVal = indexPenetrationForce + indexShearForce;
-            indexForceVal = indexPenetrationForce;
+            indexForceVal = indexPenetrationForce + indexShearForce;
+            //indexForceVal = indexShearForce;
         }
 
         if (thumbPenetrationMagSign <= 0.0f)
@@ -515,16 +531,17 @@ public class GameLogic : MonoBehaviour
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = fingerDamping * thumbShearVelocity/**/;
+            thumbShearForce = fingerDamping * thumbShearVelocity + uK * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
             //getFrictionForce(thumbRelVelocity, stribeckVelocity, uK * thumbPenetrationForce, uS * thumbPenetrationForce);
             //fingerDamping * thumbRelVelocity + fingerFrictionCoeff * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbRelVelocity)/**/;
-            
+
+            /*For debugging*/
             drawShearVelocityVector(thumbShearVelocity, thumbPosition - spherePosition,
                 0.5f * sphereScaleValue, 0.5f * thumbScaleValue, thumbLineRenderer);
 
             //Sum of forces of sphere on finger
-            //thumbForceVal = thumbPenetrationForce + thumbShearForce;
-            thumbForceVal = thumbPenetrationForce;
+            thumbForceVal = thumbPenetrationForce + thumbShearForce;
+            //thumbForceVal = thumbShearForce;
         }
 
         //Finger Force on sphere
@@ -543,51 +560,30 @@ public class GameLogic : MonoBehaviour
         {
             floorPenetration = 0.0f;
         }
-        return new Vector3(0.0f, sphereStiffness * floorPenetration, 0.0f);
 
-        #region
-        /*
-        //No contact with floor
-        if (spherePosition.y > 0.5f * sphereScaleValue)
-        {
-            floorPenetration = 0.0f;
-            return Vector3.zero;
-        }
-        //Touching ground but no penetration into floor
-        else if (spherePosition.y == 0.5f * sphereScaleValue)
-        {
-            floorPenetration = 0.0f;
-            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
-        }
-        //Sphere penetrates floor but some portion is above floor
-        else if (spherePosition.y <= 0.5f * sphereScaleValue && spherePosition.y >= -0.5f * sphereScaleValue)
-        {
-            floorPenetration = 0.5f * sphereScaleValue - spherePosition.y;
-            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
-        }
-        //sphere has completely broken through floor and normal should be practically infinite
-        else
-        {
-            floorPenetration = -spherePosition.y + 0.5f * sphereScaleValue;
-            return new Vector3(0.0f, (floorStiffness * floorPenetration) + sphereWeight, 0.0f);
-        }
-        */
-        #endregion
+        return new Vector3(0.0f, sphereStiffness * floorPenetration, 0.0f);
     }
 
-    public Vector3 getSpherePosition(Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
+    public Vector3[] getSphereStatus(Vector3 spherePosition, Vector3 sphereVelocity, Vector3 sphereAcceleration, Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
     {
         Vector3 positionPrev = spherePosition;
         Vector3 velocityPrev = sphereVelocity;
         Vector3 accelerationPrev = sphereAcceleration;
 
         sphereAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
-        sphereForce = sphereMass * sphereAcceleration;
+         sphereForce = sphereMass * sphereAcceleration;
 
         sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime;
         spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime;
 
-        return spherePosition;
+        /*For Debugging*/
+        drawSphereForceVector(sphereForce, spherePosition, sphereLineRenderer);
+
+        sphereStatus[0] = spherePosition;
+        sphereStatus[1] = sphereVelocity;
+        sphereStatus[2] = sphereAcceleration;
+        
+        return sphereStatus;
     }
 
     public float[] getFingerPositionCommands(float indexForceMag, float thumbForceMag)
@@ -654,19 +650,18 @@ public class GameLogic : MonoBehaviour
         float Ff_Mag = Fc * (float)Math.Tanh((double)(4 * vT / vS))
             + (Fs - Fc) * (vT / vS) / (Mathf.Pow(0.25f * Mathf.Pow((vT / vS), 2.0f) + 0.75f, 2.0f));
 
-        Vector3 Ff = Ff_Mag * sgn_vT;
-        return Ff;
+        //Friction Force vector
+        return Ff_Mag * sgn_vT;
     }
 
-    public Vector3 getShearVelocity(Vector3 vRel, Vector3 penetration)
+    public Vector3 getShearVelocity(Vector3 vRel, Vector3 distanceVec)
     {
         //vector normal to the plane of the instersceting spheres
-        Vector3 normal = penetration;
+        Vector3 normal = distanceVec;
         float normalMag = Vector3.Magnitude(normal);
 
-        Vector3 shearVelocity = -Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow(normalMag, 2.0f);
-
-        return shearVelocity;
+        //Shear Velocity
+        return -Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow(normalMag, 2.0f);
     }
 
     public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float sphereRadius, float fingerRadius, LineRenderer fingerLine)
@@ -678,12 +673,20 @@ public class GameLogic : MonoBehaviour
         float sphereCenterToIntersectionPoint = (Mathf.Pow(sphereRadius, 2.0f) - Mathf.Pow(fingerRadius, 2.0f) + Mathf.Pow(distanceMag, 2.0f))
                                                                         / (2.0f * distanceMag);
         Vector3 intersectionPoint = spherePosition + sphereCenterToIntersectionPoint * distanceVec_hat;
-        
+
         fingerLine.useWorldSpace = true;
         fingerLine.SetPosition(0, intersectionPoint);
         fingerLine.SetPosition(1, intersectionPoint + shearVelocity);
         fingerLine.SetWidth(0.01f, 0.01f);
+    }
 
+    public void drawSphereForceVector(Vector3 sphereForce, Vector3 spherePosition, LineRenderer sphereLine)
+    {
+        sphereLine.useWorldSpace = true;
+        sphereLine.SetPosition(0, spherePosition);
+        sphereLine.SetPosition(1, spherePosition + sphereForce);
+        sphereLine.SetWidth(0.01f, 0.01f);
+        sphereLine.material.color = Color.blue;
     }
 
     public Vector3 sign(Vector3 x)
