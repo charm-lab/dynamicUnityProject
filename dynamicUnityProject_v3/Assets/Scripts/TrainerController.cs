@@ -22,6 +22,7 @@ public class TrainerController : MonoBehaviour
 
     public float[] poseZero = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
     public float[] poseOne = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
+    public float[] poseTwo = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
 
     private Vector3 objectPosition;
     private Vector3 objectRotation;
@@ -71,7 +72,7 @@ public class TrainerController : MonoBehaviour
         float[] localPosition = { x, y, z };
         float[] localRotation = { a, e, r };
 
-        //Set pose to sensor 0 or 1
+        //Set pose to sensor 0 or 1 or 2
         if (localPose[0] == 0)
         {
             poseZero = localPose;
@@ -80,9 +81,13 @@ public class TrainerController : MonoBehaviour
         {
             poseOne = localPose;
         }
+        else if (localPose[0] == 2)
+        {
+            poseTwo = localPose;
+        }
         else
         {
-            Debug.Log("Not sensor 0 or 1?");
+            Debug.Log("Not sensor 0 or 1 or 2?");
         }
     }
 
