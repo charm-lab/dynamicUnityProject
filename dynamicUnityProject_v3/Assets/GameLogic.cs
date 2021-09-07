@@ -55,31 +55,27 @@ public class GameLogic : MonoBehaviour
     Vector3 middleScaling;
 
     /**** Create SPHERE *****/
-    GameObject sphere; //Instatiate Sphere GameObject
-    MeshRenderer sphereMeshRenderer; //Declares Mesh Renderer
-                                     //Sphere Scaling and Stiffness
-    Vector3 sphereScaling;
+    GameObject cube; //Instatiate Cube GameObject
+    MeshRenderer cubeMeshRenderer; //Declares Mesh Renderer
+                                     //Cube Scaling and Stiffness
+    Vector3 cubeScaling;
 
-    [Header("Sphere Variables")]
-    public Vector3 spherePosition;
-    public Vector3 sphereVelocity;
-    public Vector3 sphereAcceleration;
-    public Vector3 sphereForce;
-    public Vector3 sphereOrientation;
-    public float sphereScaleValue = 0.05f; //m
-    public float sphereMass = 0.3f; //kg
-    public float sphereStiffness = 500.0f; //in N/m
-    public float sphereWeight; //N scalar
+    [Header("Cube Variables")]
+    public Vector3 cubePosition;
+    public Vector3 cubeVelocity;
+    public Vector3 cubeAcceleration;
+    public Vector3 cubeForce;
+    public Vector3 cubeOrientation;
+    public float cubeScaleValue = 0.05f; //m
+    public float cubeMass = 0.3f; //kg
+    public float cubeStiffness = 500.0f; //in N/m
+    public float cubeWeight; //N scalar
     [Range(1.0f, 500.0f)]
-    public float sphereDamping = 10.0f; //in N/m/s
-    [Range(1.0f, 500.0f)]
-    public float fingerFrictionCoeff = 50.0f; //N scalar
+    public float cubeDamping = 10.0f; //in N/m/s
     [Range(0.0f, 100.0f)]
     public float fingerDamping = 10.0f; //in N/m/s
-    float stribeckVelocity = 0.1f; // in m/s
-    float uS = 0.5f; // Coefficient of static friction sphere-finger [-]
     [Range(0.0f, 100.0f)]
-    public float uK = 5.0f; // Coefficient of kinetic friction sphere-finger [-]
+    public float uK = 5.0f; // Coefficient of kinetic friction cube-finger [-]
 
     [Header("Position Commands to Arduino")]
     public float dorsalCommand;
@@ -90,7 +86,7 @@ public class GameLogic : MonoBehaviour
     public float floorStiffness = 5000; // N/m
     public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
 
-    public Vector3[] sphereStatus;
+    public Vector3[] cubeStatus;
     Vector3[] forceValues;
     float[] positionCommands;
 
@@ -112,10 +108,10 @@ public class GameLogic : MonoBehaviour
 
     [Header("Target Area Variables")]
     public Vector3 targetAreaPosition;
-    public float targetToSphereDist; //Distance between target and sphere
+    public float targetToCubeDist; //Distance between target and cube
     public float targetAreaRadius = 0.2f;
     public float targetAreaHeight;
-    public bool isSphereInTarget = false; //Sphere in target boolean
+    public bool isCubeInTarget = false; //Cube in target boolean
 
     /**** Create WAYPOINT *****/
     GameObject waypoint; //Instatiate waypoint GameObject
@@ -132,7 +128,7 @@ public class GameLogic : MonoBehaviour
     public bool indexContact;
     public bool thumbContact;
     public bool middleContact;
-    public bool heldSphereBefore = false;
+    public bool heldCubeBefore = false;
 
     /**** Trial Info *****/
     [Header("Trial Variables")]
@@ -156,7 +152,7 @@ public class GameLogic : MonoBehaviour
     LineRenderer indexLineRenderer;
     LineRenderer thumbLineRenderer;
     LineRenderer middleLineRenderer;
-    LineRenderer sphereLineRenderer;
+    LineRenderer cubeLineRenderer;
 
     #endregion
 
@@ -188,8 +184,8 @@ public class GameLogic : MonoBehaviour
         //Set up timing saving
         elapsedTimes = new float[numElapsedTimes * numTrials];
 
-        //Create the sphere Game Object
-        createSphere(startingX, startingZ);
+        //Create the cube Game Object
+        createCube(startingX, startingZ);
 
         //Create starting and target areas
         createStartingArea(startingX, startingZ);
@@ -203,7 +199,7 @@ public class GameLogic : MonoBehaviour
         indexPositionPrev = Vector3.zero;
         thumbPositionPrev = Vector3.zero;
         middlePositionPrev = Vector3.zero;
-        sphereStatus = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        cubeStatus = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         forceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         positionCommands = new float[] { 0.0f, 0.0f };
         floorNormalForce = Vector3.zero;
@@ -221,10 +217,10 @@ public class GameLogic : MonoBehaviour
     void Update()
     {
         //Debug.Log("GameLogic.cs");
-        //Reset sphere if needed
+        //Reset cube if needed
         if (Input.GetKeyDown("space"))
         {
-            resetSphere();
+            resetCube();
         }
         //Manually Change Trial Number
         if (Input.GetKeyDown("up"))
@@ -270,42 +266,42 @@ public class GameLogic : MonoBehaviour
         thumbVelocity = (thumbPosition - thumbPositionPrev) / Time.fixedDeltaTime;
         middleVelocity = (middlePosition - middlePositionPrev) / Time.fixedDeltaTime;
 
-        //Distance between centers of finger and sphere
-        indexDistToCenter = Vector3.Magnitude(indexPosition - spherePosition);
-        thumbDistToCenter = Vector3.Magnitude(thumbPosition - spherePosition);
-        middleDistToCenter = Vector3.Magnitude(middlePosition - spherePosition);
+        //Distance between centers of finger and cube
+        indexDistToCenter = Vector3.Magnitude(indexPosition - cubePosition);
+        thumbDistToCenter = Vector3.Magnitude(thumbPosition - cubePosition);
+        middleDistToCenter = Vector3.Magnitude(middlePosition - cubePosition);
 
-        //Magnitude and sign of Penetration of fingers into sphere
-        //Positive --> Inside sphere | Negative --> Outside sphere
-        indexPenetrationMagSign = 0.5f * (indexScaleValue + sphereScaleValue)
+        //Magnitude and sign of Penetration of fingers into cube
+        //Positive --> Inside cube | Negative --> Outside cube
+        indexPenetrationMagSign = 0.5f * (indexScaleValue + cubeScaleValue)
                                     - indexDistToCenter;
-        thumbPenetrationMagSign = 0.5f * (thumbScaleValue + sphereScaleValue)
+        thumbPenetrationMagSign = 0.5f * (thumbScaleValue + cubeScaleValue)
                                     - thumbDistToCenter;
-        middlePenetrationMagSign = 0.5f * (middleScaleValue + sphereScaleValue)
+        middlePenetrationMagSign = 0.5f * (middleScaleValue + cubeScaleValue)
                                     - middleDistToCenter;
 
-        //Vector of Penetration of fingers into sphere
-        indexPenetration = indexPenetrationMagSign * (indexPosition - spherePosition) / indexDistToCenter;
-        thumbPenetration = thumbPenetrationMagSign * (thumbPosition - spherePosition) / thumbDistToCenter;
-        middlePenetration = middlePenetrationMagSign * (middlePosition - spherePosition) / middleDistToCenter;
+        //Vector of Penetration of fingers into cube
+        indexPenetration = indexPenetrationMagSign * (indexPosition - cubePosition) / indexDistToCenter;
+        thumbPenetration = thumbPenetrationMagSign * (thumbPosition - cubePosition) / thumbDistToCenter;
+        middlePenetration = middlePenetrationMagSign * (middlePosition - cubePosition) / middleDistToCenter;
 
         //Force Calculation
-        forceValues = calculateFingerForceValues(sphereVelocity, indexVelocity, thumbVelocity, middleVelocity,
-            spherePosition, indexPosition, thumbPosition, middlePosition, indexPenetration, thumbPenetration, middlePenetration,
+        forceValues = calculateFingerForceValues(cubeVelocity, indexVelocity, thumbVelocity, middleVelocity,
+            cubePosition, indexPosition, thumbPosition, middlePosition, indexPenetration, thumbPenetration, middlePenetration,
             indexPenetrationMagSign, thumbPenetrationMagSign, middlePenetrationMagSign);
         indexForce = forceValues[0];
         thumbForce = forceValues[1];
         middleForce = forceValues[2];
         floorNormalForce = calculateFloorNormalForce();
 
-        //Sphere Pose
-        sphereStatus = getSphereStatus(spherePosition, sphereVelocity, sphereAcceleration,
+        //Cube Pose
+        cubeStatus = getCubeStatus(cubePosition, cubeVelocity, cubeAcceleration,
                        indexForce, thumbForce, middleForce, floorNormalForce);
-        spherePosition = sphereStatus[0];
-        sphere.transform.position = spherePosition;
-        //sphereOrientation = sphere.transform.eulerAngles;
-        sphereVelocity = sphereStatus[1];
-        sphereAcceleration = sphereStatus[2];
+        cubePosition = cubeStatus[0];
+        cube.transform.position = cubePosition;
+        //cubeOrientation = cube.transform.eulerAngles;
+        cubeVelocity = cubeStatus[1];
+        cubeAcceleration = cubeStatus[2];
 
         //Derive Position Command from force calculation and assign 
         //positionCommands = getFingerPositionCommands(Vector3.Magnitude(indexPenetrationForce), Vector3.Magnitude(thumbPenetrationForce));
@@ -320,18 +316,18 @@ public class GameLogic : MonoBehaviour
 
         /*****************************************************************************************/
 
-        //Check if sphere is inside of targetArea by calculating 
-        //the distance between target area center and sphere center
-        targetToSphereDist = Vector3.Magnitude(targetAreaPosition - spherePosition);
+        //Check if cube is inside of targetArea by calculating 
+        //the distance between target area center and cube center
+        targetToCubeDist = Vector3.Magnitude(targetAreaPosition - cubePosition);
 
         /**state machine for trials**/
 
         //Determine successes/fails
         trialLogic();
 
-        //Debug.Log("sphereAcceleration: " + sphereAcceleration);
-        //Debug.Log("sphereVelocity: " + sphereVelocity);
-        //Debug.Log("spherePosition: " + spherePosition);
+        //Debug.Log("cubeAcceleration: " + cubeAcceleration);
+        //Debug.Log("cubeVelocity: " + cubeVelocity);
+        //Debug.Log("cubePosition: " + cubePosition);
     }
 
     public void checkTrialProgress()
@@ -363,7 +359,7 @@ public class GameLogic : MonoBehaviour
                 createStartingArea(startingX, startingZ + 0.1f * targetOffset);
                 createTargetArea(startingX, startingZ - 0.1f * targetOffset);
                 createWaypoint(startingX);
-                resetSphere();
+                resetCube();
             }
         }
     }
@@ -371,11 +367,11 @@ public class GameLogic : MonoBehaviour
     public void trialLogic()
     {
 
-        /*STATE 0: Before Sphere Pickup*/
+        /*STATE 0: Before Cube Pickup*/
         if (trialState == 0)
         {
-            //If sphere has been picked up == contacted with all fingers & lifted
-            if (indexContact == true && thumbContact == true && middleContact == true && (spherePosition.y > 0.03))
+            //If cube has been picked up == contacted with all fingers & lifted
+            if (indexContact == true && thumbContact == true && middleContact == true && (cubePosition.y > 0.03))
             {
                 //move to next state
                 trialState = 1;
@@ -387,11 +383,11 @@ public class GameLogic : MonoBehaviour
                 failCounter++;
 
                 //Reset
-                resetSphere();
+                resetCube();
             }
         }
 
-        /*STATE 1: Sphere Pickup but before Passed Waypoint*/
+        /*STATE 1: Cube Pickup but before Passed Waypoint*/
         if (trialState == 1)
         {
             //if too far from finger --> fail (by drop)
@@ -401,16 +397,16 @@ public class GameLogic : MonoBehaviour
                 failCounter++;
 
                 //Reset
-                resetSphere();
+                resetCube();
             }
-            //if sphere lands in target before passing waypoint --> fail (not followed path)
-            if (checkIsSphereInTarget() == true)
+            //if cube lands in target before passing waypoint --> fail (not followed path)
+            if (checkIsCubeInTarget() == true)
             {
                 //Fail
                 failCounter++;
 
                 //Reset
-                resetSphere();
+                resetCube();
             }
             //if passed waypoint
             if (checkWaypoint() == true)
@@ -430,62 +426,62 @@ public class GameLogic : MonoBehaviour
                 failCounter++;
 
                 //Reset
-                resetSphere();
+                resetCube();
             }
             //if landed in target after passing waypoint
-            if (checkIsSphereInTarget() == true)
+            if (checkIsCubeInTarget() == true)
             {
                 //Success
                 successCounter++;
-                resetSphere();
+                resetCube();
             }
         }
 
 
     }
 
-    public void createSphere(float startingX, float startingZ)
+    public void createCube(float startingX, float startingZ)
     {
-        //Sphere Object Definition
-        sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        Destroy(sphere.GetComponent<SphereCollider>());
+        //Cube Object Definition
+        cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        Destroy(cube.GetComponent<BoxCollider>());
 
         //Name:
-        sphere.name = "Sphere";
+        cube.name = "Cube";
 
         //Set Size and Initial Position/Velocity
-        sphereScaling = new Vector3(sphereScaleValue, sphereScaleValue, sphereScaleValue);
-        sphere.transform.localScale = sphereScaling;
-        sphere.transform.position = new Vector3(startingX, 0.5f * sphereScaleValue, startingZ);
-        spherePosition = sphere.transform.position;
-        sphereVelocity = Vector3.zero;
-        sphereAcceleration = Vector3.zero;
+        cubeScaling = new Vector3(cubeScaleValue, cubeScaleValue, cubeScaleValue);
+        cube.transform.localScale = cubeScaling;
+        cube.transform.position = new Vector3(startingX, 0.5f * cubeScaleValue, startingZ);
+        cubePosition = cube.transform.position;
+        cubeVelocity = Vector3.zero;
+        cubeAcceleration = Vector3.zero;
 
-        //Set Sphere mesh properties
-        sphereMeshRenderer = sphere.GetComponent<MeshRenderer>();
-        setObjectColor(sphereMeshRenderer, 0.0f, 0.0f, 1.0f, 1.0f);
+        //Set Cube mesh properties
+        cubeMeshRenderer = cube.GetComponent<MeshRenderer>();
+        setObjectColor(cubeMeshRenderer, 0.0f, 0.0f, 1.0f, 1.0f);
 
-        sphereWeight = sphereMass * Vector3.Magnitude(Physics.gravity);
+        cubeWeight = cubeMass * Vector3.Magnitude(Physics.gravity);
 
-        sphereLineRenderer = sphere.AddComponent<LineRenderer>();
+        cubeLineRenderer = cube.AddComponent<LineRenderer>();
     }
 
-    public void resetSphere()
+    public void resetCube()
     {
-        //Destory the old sphere game object
-        Destroy(sphere);
+        //Destory the old cube game object
+        Destroy(cube);
 
         //reset hold condition since this is now a new object
-        heldSphereBefore = false;
+        heldCubeBefore = false;
 
         //reset waypoint check
         passedWaypoint = false;
 
-        //reset sphere-target check
-        isSphereInTarget = false;
+        //reset cube-target check
+        isCubeInTarget = false;
 
         //create the new object in starting positition
-        createSphere(startingAreaPosition.x, startingAreaPosition.z);
+        createCube(startingAreaPosition.x, startingAreaPosition.z);
 
         //Reset trial state
         trialState = 0;
@@ -501,7 +497,7 @@ public class GameLogic : MonoBehaviour
         startingArea.name = "StartingArea";
 
         //Set Size and Initial Position
-        startingAreaHeight = 0.5f * sphereScaleValue;
+        startingAreaHeight = 0.5f * cubeScaleValue;
         startingArea.transform.localScale = new Vector3(startingAreaRadius, startingAreaHeight, startingAreaRadius);
         startingAreaPosition = new Vector3(startingX, startingAreaHeight, startingZ);
         startingArea.transform.position = startingAreaPosition;
@@ -526,7 +522,7 @@ public class GameLogic : MonoBehaviour
         targetArea.name = "TargetArea";
 
         //Set Size and Initial Position
-        targetAreaHeight = 0.5f * sphereScaleValue;
+        targetAreaHeight = 0.5f * cubeScaleValue;
         targetArea.transform.localScale = new Vector3(targetAreaRadius, targetAreaHeight, targetAreaRadius);
         targetAreaPosition = new Vector3(startingX, targetAreaHeight, startingZ - targetOffset);
         targetArea.transform.position = targetAreaPosition;
@@ -559,8 +555,8 @@ public class GameLogic : MonoBehaviour
 
     public bool checkWaypoint()
     {
-        //check if sphere is in waypoint
-        if (Vector3.Magnitude(waypoint.transform.position - spherePosition) < 0.5f * waypointRadius - 0.5f * sphereScaleValue)
+        //check if cube is in waypoint
+        if (Vector3.Magnitude(waypoint.transform.position - cubePosition) < 0.5f * waypointRadius - 0.5f * cubeScaleValue)
         {
             passedWaypoint = true;
         }
@@ -572,21 +568,21 @@ public class GameLogic : MonoBehaviour
         return passedWaypoint;
     }
 
-    public bool checkIsSphereInTarget()
+    public bool checkIsCubeInTarget()
     {
-        if ((targetToSphereDist <= 0.5f * targetAreaRadius - 0.5f * sphereScaleValue) && (spherePosition.y <= 0.5f * sphereScaleValue))
+        if ((targetToCubeDist <= 0.5f * targetAreaRadius - 0.5f * cubeScaleValue) && (cubePosition.y <= 0.5f * cubeScaleValue))
         {
-            isSphereInTarget = true;
+            isCubeInTarget = true;
         }
         else
         {
-            isSphereInTarget = false;
+            isCubeInTarget = false;
         }
-        return isSphereInTarget;
+        return isCubeInTarget;
     }
 
-    public Vector3[] calculateFingerForceValues(Vector3 sphereVelocity, Vector3 indexVelocity, Vector3 thumbVelocity, Vector3 middleVelocity,
-        Vector3 spherePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 middlePosition,
+    public Vector3[] calculateFingerForceValues(Vector3 cubeVelocity, Vector3 indexVelocity, Vector3 thumbVelocity, Vector3 middleVelocity,
+        Vector3 cubePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 middlePosition,
         Vector3 indexPenetration, Vector3 thumbPenetration, Vector3 middlePenetration,
         float indexPenetrationMagSign, float thumbPenetrationMagSign, float middlePenetrationMagSign)
     {
@@ -594,13 +590,13 @@ public class GameLogic : MonoBehaviour
         Vector3 thumbForceVal;
         Vector3 middleForceVal;
 
-        Vector3 indexRelVelocity = indexVelocity - sphereVelocity; //sphereVelocity - indexVelocity;
-        Vector3 thumbRelVelocity = thumbVelocity - sphereVelocity; //sphereVelocity - thumbVelocity;
-        Vector3 middleRelVelocity = middleVelocity - sphereVelocity; //sphereVelocity - middleVelocity;
+        Vector3 indexRelVelocity = indexVelocity - cubeVelocity; //cubeVelocity - indexVelocity;
+        Vector3 thumbRelVelocity = thumbVelocity - cubeVelocity; //cubeVelocity - thumbVelocity;
+        Vector3 middleRelVelocity = middleVelocity - cubeVelocity; //cubeVelocity - middleVelocity;
 
-        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPosition - spherePosition);
-        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPosition - spherePosition);
-        Vector3 middleShearVelocity = getShearVelocity(middleRelVelocity, middlePosition - spherePosition);
+        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPosition - cubePosition);
+        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPosition - cubePosition);
+        Vector3 middleShearVelocity = getShearVelocity(middleRelVelocity, middlePosition - cubePosition);
 
         if (indexPenetrationMagSign <= 0.0f)
         {
@@ -613,18 +609,18 @@ public class GameLogic : MonoBehaviour
         {
             indexContact = true;
 
-            //Use Hooke's Law to find penetration force of sphere on finger
-            indexPenetrationForce = sphereStiffness * indexPenetration;
+            //Use Hooke's Law to find penetration force of cube on finger
+            indexPenetrationForce = cubeStiffness * indexPenetration;
 
-            //Add shear forces of sphere on finger due to friction
+            //Add shear forces of cube on finger due to friction
             indexShearForce = -fingerDamping * indexShearVelocity - uK * Vector3.Magnitude(indexPenetrationForce) * sign(indexShearVelocity)
-                + (1.0f / 3.0f) * sphereMass * Physics.gravity;
+                + (1.0f / 3.0f) * cubeMass * Physics.gravity;
 
             /*For debugging*/
-            drawShearVelocityVector(indexShearVelocity, indexPosition - spherePosition,
-                0.5f * sphereScaleValue, 0.5f * indexScaleValue, indexLineRenderer);
+            drawShearVelocityVector(indexShearVelocity, indexPosition - cubePosition,
+                0.5f * cubeScaleValue, 0.5f * indexScaleValue, indexLineRenderer);
 
-            //Sum of forces of sphere on finger
+            //Sum of forces of cube on finger
             indexForceVal = indexPenetrationForce + indexShearForce;
         }
 
@@ -639,17 +635,17 @@ public class GameLogic : MonoBehaviour
         {
             thumbContact = true;
 
-            //Use Hooke's Law to find force of sphere on finger
-            thumbPenetrationForce = sphereStiffness * thumbPenetration;
+            //Use Hooke's Law to find force of cube on finger
+            thumbPenetrationForce = cubeStiffness * thumbPenetration;
 
-            //Add shear forces of sphere on finger due to friction
+            //Add shear forces of cube on finger due to friction
             thumbShearForce = -fingerDamping * thumbShearVelocity - uK * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbShearVelocity);
 
             /*For debugging*/
-            drawShearVelocityVector(thumbShearVelocity, thumbPosition - spherePosition,
-                0.5f * sphereScaleValue, 0.5f * thumbScaleValue, thumbLineRenderer);
+            drawShearVelocityVector(thumbShearVelocity, thumbPosition - cubePosition,
+                0.5f * cubeScaleValue, 0.5f * thumbScaleValue, thumbLineRenderer);
 
-            //Sum of forces of sphere on finger
+            //Sum of forces of cube on finger
             thumbForceVal = thumbPenetrationForce + thumbShearForce;
         }
 
@@ -665,22 +661,22 @@ public class GameLogic : MonoBehaviour
         {
             middleContact = true;
 
-            //Use Hooke's Law to find force of sphere on finger
-            middlePenetrationForce = sphereStiffness * middlePenetration;
+            //Use Hooke's Law to find force of cube on finger
+            middlePenetrationForce = cubeStiffness * middlePenetration;
 
-            //Add shear forces of sphere on finger due to friction
+            //Add shear forces of cube on finger due to friction
             middleShearForce = -fingerDamping * middleShearVelocity - uK * Vector3.Magnitude(middlePenetrationForce) * sign(middleShearVelocity)
-                + (1.0f / 3.0f) * sphereMass * Physics.gravity;
+                + (1.0f / 3.0f) * cubeMass * Physics.gravity;
 
             /*For debugging*/
-            drawShearVelocityVector(middleShearVelocity, middlePosition - spherePosition,
-                0.5f * sphereScaleValue, 0.5f * middleScaleValue, middleLineRenderer);
+            drawShearVelocityVector(middleShearVelocity, middlePosition - cubePosition,
+                0.5f * cubeScaleValue, 0.5f * middleScaleValue, middleLineRenderer);
 
-            //Sum of forces of sphere on finger
+            //Sum of forces of cube on finger
             middleForceVal = middlePenetrationForce + middleShearForce;
         }
 
-        //Finger Force on sphere
+        //Finger Force on cube
         forceValues[0] = -indexForceVal;
         forceValues[1] = -thumbForceVal;
         forceValues[2] = -middleForceVal;
@@ -689,39 +685,39 @@ public class GameLogic : MonoBehaviour
 
     public Vector3 calculateFloorNormalForce()
     {
-        if (spherePosition.y < 0.5f * sphereScaleValue)
+        if (cubePosition.y < 0.5f * cubeScaleValue)
         {
-            floorPenetration = 0.5f * sphereScaleValue - spherePosition.y;
+            floorPenetration = 0.5f * cubeScaleValue - cubePosition.y;
         }
         else
         {
             floorPenetration = 0.0f;
         }
 
-        return new Vector3(0.0f, sphereStiffness * floorPenetration, 0.0f);
+        return new Vector3(0.0f, cubeStiffness * floorPenetration, 0.0f);
     }
 
-    public Vector3[] getSphereStatus(Vector3 spherePosition, Vector3 sphereVelocity, Vector3 sphereAcceleration,
+    public Vector3[] getCubeStatus(Vector3 cubePosition, Vector3 cubeVelocity, Vector3 cubeAcceleration,
         Vector3 indexForce, Vector3 thumbForce, Vector3 middleForce, Vector3 floorNormalForce)
     {
-        Vector3 positionPrev = spherePosition;
-        Vector3 velocityPrev = sphereVelocity;
-        Vector3 accelerationPrev = sphereAcceleration;
+        Vector3 positionPrev = cubePosition;
+        Vector3 velocityPrev = cubeVelocity;
+        Vector3 accelerationPrev = cubeAcceleration;
 
-        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + middleForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
-        sphereForce = sphereMass * sphereAcceleration;
+        cubeAcceleration = Physics.gravity + (indexForce + thumbForce + middleForce + floorNormalForce - cubeDamping * velocityPrev) / cubeMass;
+        cubeForce = cubeMass * cubeAcceleration;
 
-        sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime;
-        spherePosition = positionPrev + sphereVelocity * Time.fixedDeltaTime;
+        cubeVelocity = velocityPrev + cubeAcceleration * Time.fixedDeltaTime;
+        cubePosition = positionPrev + cubeVelocity * Time.fixedDeltaTime;
 
         /*For Debugging*/
-        drawSphereForceVector(sphereForce, spherePosition, sphereLineRenderer);
+        drawCubeForceVector(cubeForce, cubePosition, cubeLineRenderer);
 
-        sphereStatus[0] = spherePosition;
-        sphereStatus[1] = sphereVelocity;
-        sphereStatus[2] = sphereAcceleration;
+        cubeStatus[0] = cubePosition;
+        cubeStatus[1] = cubeVelocity;
+        cubeStatus[2] = cubeAcceleration;
 
-        return sphereStatus;
+        return cubeStatus;
     }
 
     public float[] getFingerPositionCommands(float indexForceMag, float thumbForceMag)
@@ -739,28 +735,28 @@ public class GameLogic : MonoBehaviour
         /*Condition 1: Index --> Dorsal | Thumb --> Ventral*/
         else if (trialNumber == 1)
         {
-            dorsalVal = 1000 * (indexForceMag / sphereStiffness);
-            ventralVal = 1000 * (thumbForceMag / sphereStiffness);
+            dorsalVal = 1000 * (indexForceMag / cubeStiffness);
+            ventralVal = 1000 * (thumbForceMag / cubeStiffness);
         }
 
         /*Condition 2: Index --> Ventral | Thumb --> Dorsal*/
         else if (trialNumber == 2)
         {
-            dorsalVal = 1000 * (thumbForceMag / sphereStiffness);
-            ventralVal = 1000 * (indexForceMag / sphereStiffness);
+            dorsalVal = 1000 * (thumbForceMag / cubeStiffness);
+            ventralVal = 1000 * (indexForceMag / cubeStiffness);
         }
 
         /*Condition 3: Single Tactor Feedback to Index Finger on Dorsal Side*/
         else if (trialNumber == 3)
         {
-            dorsalVal = 1000 * (indexForceMag / sphereStiffness);
+            dorsalVal = 1000 * (indexForceMag / cubeStiffness);
             ventralVal = 0.0f;
         }
 
         /*Condition 4: Average of both finger forces to single tactor on dorsal side*/
         else if (trialNumber == 4)
         {
-            dorsalVal = 500.0f * (indexForceMag + thumbForceMag) / sphereStiffness;
+            dorsalVal = 500.0f * (indexForceMag + thumbForceMag) / cubeStiffness;
             ventralVal = 0.0f;
         }
 
@@ -779,7 +775,7 @@ public class GameLogic : MonoBehaviour
 
     public Vector3 getShearVelocity(Vector3 vRel, Vector3 distanceVec)
     {
-        //vector normal to the plane of the instersceting spheres
+        //vector normal to the plane of the instersceting cubes
         Vector3 normal = distanceVec;
         float normalMag = Vector3.Magnitude(normal);
 
@@ -787,15 +783,15 @@ public class GameLogic : MonoBehaviour
         return Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow(normalMag, 2.0f);
     }
 
-    public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float sphereRadius, float fingerRadius, LineRenderer fingerLine)
+    public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float cubeRadius, float fingerRadius, LineRenderer fingerLine)
     {
-        //vector distance between centers instersceting spheres
+        //vector distance between centers instersceting cubes
         float distanceMag = Vector3.Magnitude(distanceVec);
         Vector3 distanceVec_hat = distanceVec / Vector3.Magnitude(distanceVec);
 
-        float sphereCenterToIntersectionPoint = (Mathf.Pow(sphereRadius, 2.0f) - Mathf.Pow(fingerRadius, 2.0f) + Mathf.Pow(distanceMag, 2.0f))
+        float cubeCenterToIntersectionPoint = (Mathf.Pow(cubeRadius, 2.0f) - Mathf.Pow(fingerRadius, 2.0f) + Mathf.Pow(distanceMag, 2.0f))
                                                                         / (2.0f * distanceMag);
-        Vector3 intersectionPoint = spherePosition + sphereCenterToIntersectionPoint * distanceVec_hat;
+        Vector3 intersectionPoint = cubePosition + cubeCenterToIntersectionPoint * distanceVec_hat;
 
         fingerLine.useWorldSpace = true;
         fingerLine.SetPosition(0, intersectionPoint);
@@ -803,13 +799,13 @@ public class GameLogic : MonoBehaviour
         fingerLine.SetWidth(0.01f, 0.01f);
     }
 
-    public void drawSphereForceVector(Vector3 sphereForce, Vector3 spherePosition, LineRenderer sphereLine)
+    public void drawCubeForceVector(Vector3 cubeForce, Vector3 cubePosition, LineRenderer cubeLine)
     {
-        sphereLine.useWorldSpace = true;
-        sphereLine.SetPosition(0, spherePosition);
-        sphereLine.SetPosition(1, spherePosition + sphereForce);
-        sphereLine.SetWidth(0.01f, 0.01f);
-        sphereLine.material.color = Color.blue;
+        cubeLine.useWorldSpace = true;
+        cubeLine.SetPosition(0, cubePosition);
+        cubeLine.SetPosition(1, cubePosition + cubeForce);
+        cubeLine.SetWidth(0.01f, 0.01f);
+        cubeLine.material.color = Color.blue;
     }
 
     public Vector3 sign(Vector3 x)
@@ -834,18 +830,4 @@ public class GameLogic : MonoBehaviour
         mesh.material.renderQueue = 3000;
     }
 
-    public Vector3 getFrictionForce(Vector3 fingerRelVelocity, float stribeckVelocity, Vector3 coulombFrictionForce, Vector3 staticFrictionForce)
-    {
-        Vector3 sgn_vT = sign(fingerRelVelocity);
-        float vT = Vector3.Magnitude(fingerRelVelocity);
-        float vS = stribeckVelocity;
-        float Fc = Vector3.Magnitude(coulombFrictionForce);
-        float Fs = Vector3.Magnitude(staticFrictionForce);
-
-        float Ff_Mag = Fc * (float)Math.Tanh((double)(4 * vT / vS))
-            + (Fs - Fc) * (vT / vS) / (Mathf.Pow(0.25f * Mathf.Pow((vT / vS), 2.0f) + 0.75f, 2.0f));
-
-        //Friction Force vector
-        return Ff_Mag * sgn_vT;
-    }
 }

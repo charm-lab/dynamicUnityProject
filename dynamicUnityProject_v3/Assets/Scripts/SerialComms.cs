@@ -107,15 +107,15 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().thumbOrientation.y,
                     player.GetComponent<GameLogic>().thumbOrientation.z,
                     player.GetComponent<GameLogic>().thumbScaleValue,
-                    //Sphere Info
-                    player.GetComponent<GameLogic>().spherePosition.x,
-                    player.GetComponent<GameLogic>().spherePosition.y,
-                    player.GetComponent<GameLogic>().spherePosition.z,
-                    player.GetComponent<GameLogic>().sphereOrientation.x,
-                    player.GetComponent<GameLogic>().sphereOrientation.y,
-                    player.GetComponent<GameLogic>().sphereOrientation.z,
-                    player.GetComponent<GameLogic>().sphereScaleValue,
-                    player.GetComponent<GameLogic>().sphereStiffness,
+                    //Cube Info
+                    player.GetComponent<GameLogic>().cubePosition.x,
+                    player.GetComponent<GameLogic>().cubePosition.y,
+                    player.GetComponent<GameLogic>().cubePosition.z,
+                    player.GetComponent<GameLogic>().cubeOrientation.x,
+                    player.GetComponent<GameLogic>().cubeOrientation.y,
+                    player.GetComponent<GameLogic>().cubeOrientation.z,
+                    player.GetComponent<GameLogic>().cubeScaleValue,
+                    player.GetComponent<GameLogic>().cubeStiffness,
                     //Start Area Info
                     player.GetComponent<GameLogic>().startingAreaPosition.x,
                     player.GetComponent<GameLogic>().startingAreaPosition.y,
@@ -137,9 +137,9 @@ public class SerialComms : MonoBehaviour
                     //
                     player.GetComponent<GameLogic>().indexShearForce.y,
                     player.GetComponent<GameLogic>().thumbShearForce.y,
-                    player.GetComponent<GameLogic>().sphereWeight,
+                    player.GetComponent<GameLogic>().cubeWeight,
                     player.GetComponent<GameLogic>().indexShearForce.y + player.GetComponent<GameLogic>().thumbShearForce.y -
-                    player.GetComponent<GameLogic>().sphereWeight
+                    player.GetComponent<GameLogic>().cubeWeight
                 };
 
                 //Add data to the lists
