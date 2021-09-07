@@ -671,7 +671,7 @@ MonoBehaviour:
   sphereDamping: 10
   fingerFrictionCoeff: 50
   fingerDamping: 10
-  uK: 0
+  uK: 0.2
   dorsalCommand: 0
   ventralCommand: 0
   floorPenetration: 0
@@ -694,8 +694,9 @@ MonoBehaviour:
   middleContact: 0
   heldSphereBefore: 0
   trialNumber: 1
+  trialState: 0
   numTrials: 4
-  numElapsedTimes: 1
+  numElapsedTimes: 3
   successCounter: 0
   failCounter: 0
   timeOfCurrentSuccess: 0

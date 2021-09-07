@@ -67,7 +67,7 @@ public class GameLogic : MonoBehaviour
     public Vector3 sphereForce;
     public Vector3 sphereOrientation;
     public float sphereScaleValue = 0.05f; //m
-    public float sphereMass = 0.5f; //kg
+    public float sphereMass = 0.3f; //kg
     public float sphereStiffness = 500.0f; //in N/m
     public float sphereWeight; //N scalar
     [Range(1.0f, 500.0f)]
@@ -79,7 +79,7 @@ public class GameLogic : MonoBehaviour
     float stribeckVelocity = 0.1f; // in m/s
     float uS = 0.5f; // Coefficient of static friction sphere-finger [-]
     [Range(0.0f, 100.0f)]
-    public float uK = 0.2f; // Coefficient of kinetic friction sphere-finger [-]
+    public float uK = 5.0f; // Coefficient of kinetic friction sphere-finger [-]
 
     [Header("Position Commands to Arduino")]
     public float dorsalCommand;
@@ -137,8 +137,9 @@ public class GameLogic : MonoBehaviour
     /**** Trial Info *****/
     [Header("Trial Variables")]
     public int trialNumber = 1; //the actual trial being worked on
+    public int trialState = 0; //the actual trial being worked on
     public int numTrials = 4; // the total number of trials the user will participate in
-    public int numElapsedTimes = 1; //num of attempts for each trial
+    public int numElapsedTimes = 3; //num of attempts for each trial
 
     public int successCounter = 0; //number of successful moves within a trial
     public int failCounter = 0;
@@ -152,12 +153,12 @@ public class GameLogic : MonoBehaviour
     public int timeIndex = 0;
     public float[] elapsedTimes;
 
-    #endregion
-
     LineRenderer indexLineRenderer;
     LineRenderer thumbLineRenderer;
     LineRenderer middleLineRenderer;
     LineRenderer sphereLineRenderer;
+
+    #endregion
 
     // Start is called before the first frame update
     void Start()
@@ -326,7 +327,7 @@ public class GameLogic : MonoBehaviour
         /**state machine for trials**/
 
         //Determine successes/fails
-        //trialLogic();
+        trialLogic();
 
         //Debug.Log("sphereAcceleration: " + sphereAcceleration);
         //Debug.Log("sphereVelocity: " + sphereVelocity);
@@ -359,8 +360,8 @@ public class GameLogic : MonoBehaviour
                 Destroy(waypoint);
 
                 //create new start, target, and waypoint with increased spacing
-                createStartingArea(startingX, startingZ + 0.5f * targetOffset);
-                createTargetArea(startingX, startingZ - 0.5f * targetOffset);
+                createStartingArea(startingX, startingZ + 0.1f * targetOffset);
+                createTargetArea(startingX, startingZ - 0.1f * targetOffset);
                 createWaypoint(startingX);
                 resetSphere();
             }
@@ -369,11 +370,77 @@ public class GameLogic : MonoBehaviour
 
     public void trialLogic()
     {
-        //Check if the sphere passed through the waypoint
-        checkWaypoint();
 
-        //Check if sphere is in target
-        checkIsSphereInTarget();
+        /*STATE 0: Before Sphere Pickup*/
+        if (trialState == 0)
+        {
+            //If sphere has been picked up == contacted with all fingers & lifted
+            if (indexContact == true && thumbContact == true && middleContact == true && (spherePosition.y > 0.03))
+            {
+                //move to next state
+                trialState = 1;
+            }
+            //if too far from finger --> fail
+            if (indexDistToCenter > 2.0f)
+            {
+                //Fail
+                failCounter++;
+
+                //Reset
+                resetSphere();
+            }
+        }
+
+        /*STATE 1: Sphere Pickup but before Passed Waypoint*/
+        if (trialState == 1)
+        {
+            //if too far from finger --> fail (by drop)
+            if (indexDistToCenter > 0.05f)
+            {
+                //Fail
+                failCounter++;
+
+                //Reset
+                resetSphere();
+            }
+            //if sphere lands in target before passing waypoint --> fail (not followed path)
+            if (checkIsSphereInTarget() == true)
+            {
+                //Fail
+                failCounter++;
+
+                //Reset
+                resetSphere();
+            }
+            //if passed waypoint
+            if (checkWaypoint() == true)
+            {
+                //move to next state
+                trialState = 2;
+            }
+        }
+
+        /*STATE 2: After Passed Waypoint but before reaching target*/
+        if (trialState == 2)
+        {
+            //if too far from finger --> fail (by drop)
+            if (indexDistToCenter > 0.05f)
+            {
+                //Fail
+                failCounter++;
+
+                //Reset
+                resetSphere();
+            }
+            //if landed in target after passing waypoint
+            if (checkIsSphereInTarget() == true)
+            {
+                //Success
+                successCounter++;
+                resetSphere();
+            }
+        }
+
 
     }
 
@@ -419,6 +486,9 @@ public class GameLogic : MonoBehaviour
 
         //create the new object in starting positition
         createSphere(startingAreaPosition.x, startingAreaPosition.z);
+
+        //Reset trial state
+        trialState = 0;
     }
 
     public void createStartingArea(float startingX, float startingZ)
@@ -516,7 +586,7 @@ public class GameLogic : MonoBehaviour
     }
 
     public Vector3[] calculateFingerForceValues(Vector3 sphereVelocity, Vector3 indexVelocity, Vector3 thumbVelocity, Vector3 middleVelocity,
-        Vector3 spherePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 middlePosition, 
+        Vector3 spherePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 middlePosition,
         Vector3 indexPenetration, Vector3 thumbPenetration, Vector3 middlePenetration,
         float indexPenetrationMagSign, float thumbPenetrationMagSign, float middlePenetrationMagSign)
     {
@@ -534,12 +604,15 @@ public class GameLogic : MonoBehaviour
 
         if (indexPenetrationMagSign <= 0.0f)
         {
+            indexContact = false;
             indexPenetrationForce = Vector3.zero;
             indexShearForce = Vector3.zero;
             indexForceVal = Vector3.zero;
         }
         else
         {
+            indexContact = true;
+
             //Use Hooke's Law to find penetration force of sphere on finger
             indexPenetrationForce = sphereStiffness * indexPenetration;
 
@@ -557,18 +630,20 @@ public class GameLogic : MonoBehaviour
 
         if (thumbPenetrationMagSign <= 0.0f)
         {
+            thumbContact = false;
             thumbPenetrationForce = Vector3.zero;
             thumbShearForce = Vector3.zero;
             thumbForceVal = Vector3.zero;
         }
         else
         {
+            thumbContact = true;
+
             //Use Hooke's Law to find force of sphere on finger
             thumbPenetrationForce = sphereStiffness * thumbPenetration;
 
             //Add shear forces of sphere on finger due to friction
-            thumbShearForce = -fingerDamping * thumbShearVelocity - uK * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbShearVelocity)
-                + (1.0f / 3.0f) * sphereMass * Physics.gravity;
+            thumbShearForce = -fingerDamping * thumbShearVelocity - uK * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbShearVelocity);
 
             /*For debugging*/
             drawShearVelocityVector(thumbShearVelocity, thumbPosition - spherePosition,
@@ -577,22 +652,25 @@ public class GameLogic : MonoBehaviour
             //Sum of forces of sphere on finger
             thumbForceVal = thumbPenetrationForce + thumbShearForce;
         }
-        
+
 
         if (middlePenetrationMagSign <= 0.0f)
         {
+            middleContact = false;
             middlePenetrationForce = Vector3.zero;
             middleShearForce = Vector3.zero;
             middleForceVal = Vector3.zero;
         }
         else
         {
+            middleContact = true;
+
             //Use Hooke's Law to find force of sphere on finger
             middlePenetrationForce = sphereStiffness * middlePenetration;
 
             //Add shear forces of sphere on finger due to friction
             middleShearForce = -fingerDamping * middleShearVelocity - uK * Vector3.Magnitude(middlePenetrationForce) * sign(middleShearVelocity)
-                + (1.0f/3.0f) * sphereMass * Physics.gravity;
+                + (1.0f / 3.0f) * sphereMass * Physics.gravity;
 
             /*For debugging*/
             drawShearVelocityVector(middleShearVelocity, middlePosition - spherePosition,
@@ -630,7 +708,7 @@ public class GameLogic : MonoBehaviour
         Vector3 velocityPrev = sphereVelocity;
         Vector3 accelerationPrev = sphereAcceleration;
 
-        sphereAcceleration = Physics.gravity + (indexForce + thumbForce  + middleForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
+        sphereAcceleration = Physics.gravity + (indexForce + thumbForce + middleForce + floorNormalForce - sphereDamping * velocityPrev) / sphereMass;
         sphereForce = sphereMass * sphereAcceleration;
 
         sphereVelocity = velocityPrev + sphereAcceleration * Time.fixedDeltaTime;

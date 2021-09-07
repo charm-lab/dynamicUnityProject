@@ -133,8 +133,14 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().failCounter,
                     player.GetComponent<GameLogic>().timeOfCurrentSuccess,
                     player.GetComponent<GameLogic>().timeSinceLastSuccess,
-                    num4
-                    };
+                    num4,
+                    //
+                    player.GetComponent<GameLogic>().indexShearForce.y,
+                    player.GetComponent<GameLogic>().thumbShearForce.y,
+                    player.GetComponent<GameLogic>().sphereWeight,
+                    player.GetComponent<GameLogic>().indexShearForce.y + player.GetComponent<GameLogic>().thumbShearForce.y -
+                    player.GetComponent<GameLogic>().sphereWeight
+                };
 
                 //Add data to the lists
                 string[] arduinoDataValsFinal = new string[] { arduinoDataVals[0], arduinoDataVals[1], arduinoElapsedTime.ToString() };
