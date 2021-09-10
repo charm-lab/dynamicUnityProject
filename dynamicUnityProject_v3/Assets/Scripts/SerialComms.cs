@@ -97,7 +97,7 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().indexOrientation.x,
                     player.GetComponent<GameLogic>().indexOrientation.y,
                     player.GetComponent<GameLogic>().indexOrientation.z,
-                    player.GetComponent<GameLogic>().indexScaleValue,
+                    player.GetComponent<GameLogic>().indexDiameter,
                     //Thumb Info
                     num2,
                     player.GetComponent<GameLogic>().thumbPosition.x,
@@ -114,7 +114,7 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().cubeOrientation.x,
                     player.GetComponent<GameLogic>().cubeOrientation.y,
                     player.GetComponent<GameLogic>().cubeOrientation.z,
-                    player.GetComponent<GameLogic>().cubeScaleValue,
+                    player.GetComponent<GameLogic>().cubeLength,
                     player.GetComponent<GameLogic>().cubeStiffness,
                     //Start Area Info
                     player.GetComponent<GameLogic>().startingAreaPosition.x,
