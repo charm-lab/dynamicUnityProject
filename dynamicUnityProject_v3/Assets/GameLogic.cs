@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using System;
+using System.Linq;
 
 public class GameLogic : MonoBehaviour
 {
     #region
     GameObject indexSphere;
     GameObject thumbSphere;
-    GameObject middleSphere;
     GameObject trakSTAROrigin;
 
     [Header("Index Variables")]
@@ -21,7 +21,6 @@ public class GameLogic : MonoBehaviour
     public Vector3 indexShearForce;
     public Vector3 indexForce;
     public float indexDistToCenter;
-    public float indexPenetrationMagSign;
     public float indexDiameter = 0.02f;  //m
     Vector3 indexPositionPrev;
     Vector3 indexScaling;
@@ -35,24 +34,9 @@ public class GameLogic : MonoBehaviour
     public Vector3 thumbShearForce;
     public Vector3 thumbForce;
     public float thumbDistToCenter;
-    public float thumbPenetrationMagSign;
-    public float thumbScaleValue = 0.02f; //m
+    public float thumbDiameter = 0.02f; //m
     Vector3 thumbPositionPrev;
     Vector3 thumbScaling;
-
-    [Header("Middle Variables")]
-    public Vector3 middlePosition;
-    public Vector3 middleVelocity;
-    public Vector3 middleOrientation;
-    public Vector3 middlePenetration;
-    public Vector3 middlePenetrationForce;
-    public Vector3 middleShearForce;
-    public Vector3 middleForce;
-    public float middleDistToCenter;
-    public float middlePenetrationMagSign;
-    public float middleScaleValue = 0.02f; //m
-    Vector3 middlePositionPrev;
-    Vector3 middleScaling;
 
     /**** Create SPHERE *****/
     GameObject cube; //Instatiate Cube GameObject
@@ -87,7 +71,8 @@ public class GameLogic : MonoBehaviour
     public Vector3 floorNormalForce; //Strictly the normal from interacting with the floor
 
     public Vector3[] cubeStatus;
-    Vector3[] forceValues;
+    Vector3[] indexForceValues;
+    Vector3[] thumbForceValues;
     float[] positionCommands;
 
     /**** Create STARTINGAREA *****/
@@ -127,7 +112,6 @@ public class GameLogic : MonoBehaviour
     //Contact booleans
     public bool indexContact;
     public bool thumbContact;
-    public bool middleContact;
     public bool heldCubeBefore = false;
 
     /**** Trial Info *****/
@@ -151,29 +135,30 @@ public class GameLogic : MonoBehaviour
 
     LineRenderer indexLineRenderer;
     LineRenderer thumbLineRenderer;
-    LineRenderer middleLineRenderer;
 
     #endregion
 
     LineRenderer cubeLineRenderer;
-    LineRenderer cubeRadialLineRenderer;
-    LineRenderer penetrationLineRenderer;
 
     public Vector3 indexCubeVec;
+    public Vector3 thumbCubeVec;
     public Vector3 cubeAxisX;
     public Vector3 cubeAxisY;
     public Vector3 cubeAxisZ;
 
     //Cube Wall IDs:
-    public int entryWallIndex;
-    public int none = 0;
-    public int cubeRight = 1;
-    public int cubeLeft = 2;
-    public int cubeUp = 3;
-    public int cubeDown = 4;
-    public int cubeFront = 5;
-    public int cubeBack = 6;
-    bool isPenetrating;
+    Vector3 cubePositionPrev;
+    public int indexEntryWall;
+    public int thumbEntryWall;
+    int none = 0;
+    int cubeRight = 1;
+    int cubeLeft = 2;
+    int cubeUp = 3;
+    int cubeDown = 4;
+    int cubeFront = 5;
+    int cubeBack = 6;
+    Vector3 indexPentrationDirection;
+    Vector3 thumbPentrationDirection;
 
 
     // Start is called before the first frame update
@@ -183,23 +168,19 @@ public class GameLogic : MonoBehaviour
 
         indexSphere = GameObject.Find("trakSTAR/Index Sphere");
         thumbSphere = GameObject.Find("trakSTAR/Thumb Sphere");
-        middleSphere = GameObject.Find("trakSTAR/Middle Sphere");
 
         trakSTAROrigin = GameObject.Find("trakSTAR/trakSTAR Origin");
         trakSTAROrigin.transform.position = Vector3.zero;
 
-        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 0.5f);
+        setObjectColor(indexSphere.GetComponent<MeshRenderer>(), 1.0f, 0.0f, 0.0f, 1.0f);
         setObjectColor(thumbSphere.GetComponent<MeshRenderer>(), 0.0f, 1.0f, 1.0f, 1.0f);
-        setObjectColor(middleSphere.GetComponent<MeshRenderer>(), 1.0f, 0.647f, 0.0f, 1.0f);
 
         trakSTAROrigin.GetComponent<MeshRenderer>().material.color = Color.magenta;
 
         indexScaling = new Vector3(indexDiameter, indexDiameter, indexDiameter);
         indexSphere.transform.localScale = indexScaling;
-        thumbScaling = new Vector3(thumbScaleValue, thumbScaleValue, thumbScaleValue);
+        thumbScaling = new Vector3(thumbDiameter, thumbDiameter, thumbDiameter);
         thumbSphere.transform.localScale = thumbScaling;
-        middleScaling = new Vector3(middleScaleValue, middleScaleValue, middleScaleValue);
-        middleSphere.transform.localScale = middleScaling;
 
         //Set up timing saving
         elapsedTimes = new float[numElapsedTimes * numTrials];
@@ -214,16 +195,18 @@ public class GameLogic : MonoBehaviour
 
         //Variable initializations
         indexVelocity = Vector3.zero; indexCubeVec = Vector3.zero;
-        thumbVelocity = Vector3.zero;
-        middleVelocity = Vector3.zero;
+        thumbVelocity = Vector3.zero; thumbCubeVec = Vector3.zero;
 
         indexPositionPrev = Vector3.zero;
         thumbPositionPrev = Vector3.zero;
-        middlePositionPrev = Vector3.zero;
         cubePositionPrev = Vector3.zero;
 
         cubeStatus = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
-        forceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        indexForceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        thumbForceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+
+        indexContact = false;
+        thumbContact = false;
 
         positionCommands = new float[] { 0.0f, 0.0f };
         floorNormalForce = Vector3.zero;
@@ -232,10 +215,12 @@ public class GameLogic : MonoBehaviour
         //create Shear Velocity Vector lines
         indexLineRenderer = indexSphere.AddComponent<LineRenderer>();
         thumbLineRenderer = thumbSphere.AddComponent<LineRenderer>();
-        middleLineRenderer = middleSphere.AddComponent<LineRenderer>();
 
-        isPenetrating = false;
-        entryWallIndex = none;
+        indexEntryWall = none;
+        thumbEntryWall = none;
+
+        indexPentrationDirection = Vector3.zero;
+        thumbPentrationDirection = Vector3.zero;
     }
 
     // Update is called once per frame
@@ -276,7 +261,6 @@ public class GameLogic : MonoBehaviour
     // Purpose: Physics calcuations, adjusting physics/rigidbody objects
     void FixedUpdate()
     {
-        #region
         //Check Progress of trial
         checkTrialProgress();
 
@@ -286,57 +270,55 @@ public class GameLogic : MonoBehaviour
         indexOrientation = indexSphere.transform.eulerAngles;
         thumbPosition = thumbSphere.transform.position;
         thumbOrientation = thumbSphere.transform.eulerAngles;
-        middlePosition = middleSphere.transform.position;
-        middleOrientation = middleSphere.transform.eulerAngles;
 
         //Finger Velocity
         indexVelocity = (indexPosition - indexPositionPrev) / Time.fixedDeltaTime;
         thumbVelocity = (thumbPosition - thumbPositionPrev) / Time.fixedDeltaTime;
-        middleVelocity = (middlePosition - middlePositionPrev) / Time.fixedDeltaTime;
-        #endregion
+
 
         //Distance Vector between centers of finger and cube
         indexCubeVec = indexPosition - cubePosition;  // Index-->Cube 
+        thumbCubeVec = thumbPosition - cubePosition;  // Thumb-->Cube 
 
         //Distance Magnitude between centers of finger and cube
         indexDistToCenter = Vector3.Magnitude(indexCubeVec);
-        thumbDistToCenter = Vector3.Magnitude(thumbPosition - cubePosition);
-        middleDistToCenter = Vector3.Magnitude(middlePosition - cubePosition);
+        thumbDistToCenter = Vector3.Magnitude(thumbCubeVec);
 
-        //Magnitude and sign of Penetration of fingers into cube
-        //Positive --> Inside cube | Negative --> Outside cube
-        indexPenetrationMagSign = 0.5f * (indexDiameter + cubeLength)
-                                    - indexDistToCenter;
-        thumbPenetrationMagSign = 0.5f * (thumbScaleValue + cubeLength)
-                                    - thumbDistToCenter;
-        middlePenetrationMagSign = 0.5f * (middleScaleValue + cubeLength)
-                                    - middleDistToCenter;
-        
-        entryWall = getEntryWall(indexDistToCenter, 0.5f * indexDiameter, indexVelocity);
+        //Find wall of penetration
+        indexEntryWall = getEntryWall(indexDistToCenter, 0.5f * indexDiameter, indexCubeVec);
+        thumbEntryWall = getEntryWall(thumbDistToCenter, 0.5f * thumbDiameter, thumbCubeVec);
 
         //Vector of Penetration of fingers into cube
-        indexPenetration = ;
-        thumbPenetration = thumbPenetrationMagSign * (thumbPosition - cubePosition) / thumbDistToCenter;
-        middlePenetration = middlePenetrationMagSign * (middlePosition - cubePosition) / middleDistToCenter;
+        indexPenetration = getPenetration(indexEntryWall, indexCubeVec, cubePosition, indexPosition, 0.5f * indexDiameter);
+        thumbPenetration = getPenetration(thumbEntryWall, thumbCubeVec, cubePosition, thumbPosition, 0.5f * thumbDiameter);
 
-        //indexPenetrationMagSign = Vector3.Magnitude(indexPenetration) * sign(indexPenetration)
-        //drawPenetrationVector( penetrationLineRenderer);
+        //Set Contact booleans
+        indexContact = setContactBoolean(indexPenetration);
+        thumbContact = setContactBoolean(thumbPenetration);
 
-        #region
         //Force Calculation
-        forceValues = calculateFingerForceValues(cubeVelocity, indexVelocity, thumbVelocity, middleVelocity,
-            cubePosition, indexPosition, thumbPosition, middlePosition, indexPenetration, thumbPenetration, middlePenetration,
-            indexPenetrationMagSign, thumbPenetrationMagSign, middlePenetrationMagSign);
-        indexForce = forceValues[0];
-        thumbForce = forceValues[1];
-        middleForce = forceValues[2];
+        indexForceValues = calculateFingerForce(indexCubeVec, cubeVelocity, indexVelocity, indexPenetration,
+                   indexPentrationDirection, indexContact, indexLineRenderer);
+        thumbForceValues = calculateFingerForce(thumbCubeVec, cubeVelocity, thumbVelocity, thumbPenetration,
+            thumbPentrationDirection, thumbContact, thumbLineRenderer);
+
+        //Penetration Force
+        indexPenetrationForce = indexForceValues[0];
+        thumbPenetrationForce = thumbForceValues[0];
+        //Shear Force
+        indexShearForce = indexForceValues[1];
+        thumbShearForce = thumbForceValues[1];
+        //Total force
+        indexForce = indexForceValues[2];
+        thumbForce = thumbForceValues[2];
         floorNormalForce = calculateFloorNormalForce();
 
         //Cube Pose
         cubeStatus = getCubeStatus(cubePosition, cubeVelocity, cubeAcceleration,
-                       indexForce, thumbForce, middleForce, floorNormalForce);
+                       indexForce, thumbForce, floorNormalForce);
         cubePosition = cubeStatus[0];
         cube.transform.position = cubePosition;
+
         //cubeOrientation = cube.transform.eulerAngles;
         cubeVelocity = cubeStatus[1];
         cubeAcceleration = cubeStatus[2];
@@ -349,15 +331,12 @@ public class GameLogic : MonoBehaviour
         //set prev position
         indexPositionPrev = indexPosition;
         thumbPositionPrev = thumbPosition;
-        middlePositionPrev = middlePosition;
         cubePositionPrev = cubePosition;
         /*****************************************************************************************/
 
         //Check if cube is inside of targetArea by calculating 
         //the distance between target area center and cube center
         targetToCubeDist = Vector3.Magnitude(targetAreaPosition - cubePosition);
-
-        #endregion
 
         //Determine successes/fails
         trialLogic();
@@ -404,7 +383,7 @@ public class GameLogic : MonoBehaviour
         if (trialState == 0)
         {
             //If cube has been picked up == contacted with all fingers & lifted
-            if (indexContact == true && thumbContact == true && middleContact == true && (cubePosition.y > 0.03))
+            if (indexContact == true && thumbContact == true && (cubePosition.y > 0.03))
             {
                 //move to next state
                 trialState = 1;
@@ -497,12 +476,12 @@ public class GameLogic : MonoBehaviour
 
         //Set Cube mesh properties
         cubeMeshRenderer = cube.GetComponent<MeshRenderer>();
-        setObjectColor(cubeMeshRenderer, 0.0f, 0.0f, 1.0f, 0.5f);
+        setObjectColor(cubeMeshRenderer, 0.0f, 0.0f, 1.0f, 1.0f);
 
         cubeWeight = cubeMass * Vector3.Magnitude(Physics.gravity);
 
         // cubeLineRenderer = cube.AddComponent<LineRenderer>();
-        penetrationLineRenderer = cube.AddComponent<LineRenderer>();
+        cubeLineRenderer = cube.AddComponent<LineRenderer>();
     }
 
     public void resetCube()
@@ -620,26 +599,27 @@ public class GameLogic : MonoBehaviour
         return isCubeInTarget;
     }
 
-    public float getEntryWall(float distToCenter, float radius, float fingerVelocity)
+    public int getEntryWall(float distToCenter, float radius, Vector3 fingerToCubeVec)
     {
-        if ( distToCenter >= (cubeLength + radius))
+        if (distToCenter >= (0.5f * cubeLength + radius))
         {
-            isPentrating = false;
             return none;
         }
         else
         {
-            isPenetrating = true;
-
             //Find direction of entry
-            float[] dotProducts = { Vector3.Dot(fingerVelocity, cubeAxisX),
-                Vector3.Dot(fingerVelocity, cubeAxisY),
-                Vector3.Dot(fingerVelocity, cubeAxisZ) };
+            float[] dotProducts = { Vector3.Dot(fingerToCubeVec, cubeAxisX),
+                Vector3.Dot(fingerToCubeVec, cubeAxisY),
+                Vector3.Dot(fingerToCubeVec, cubeAxisZ) };
+
+            float[] dotProductsAbs = { Mathf.Abs(dotProducts[0]),
+                Mathf.Abs(dotProducts[1]),
+                Mathf.Abs(dotProducts[2]) };
 
             //Max component in +/-x:
-            if ( Array.IndexOf(dotProducts, dotProducts.Select(Math.Abs).Max()) = 0 )
+            if (Array.IndexOf(dotProductsAbs, dotProductsAbs.Max()) == 0)
             {
-                if ( dotProducts[0] > 0 )
+                if (dotProducts[0] >= 0)
                 {
                     return cubeFront;
                 }
@@ -649,9 +629,9 @@ public class GameLogic : MonoBehaviour
                 }
             }
             //Max component in +/-y:
-            if (Array.IndexOf(dotProducts, dotProducts.Select(Math.Abs).Max()) = 1)
+            if (Array.IndexOf(dotProductsAbs, dotProductsAbs.Max()) == 1)
             {
-                if (dotProducts[1] > 0)
+                if (dotProducts[1] >= 0)
                 {
                     return cubeUp;
                 }
@@ -661,9 +641,9 @@ public class GameLogic : MonoBehaviour
                 }
             }
             //Max component in +/-z:
-            if (Array.IndexOf(dotProducts, dotProducts.Select(Math.Abs).Max()) = 2)
+            if (Array.IndexOf(dotProductsAbs, dotProductsAbs.Max()) == 2)
             {
-                if (dotProducts[2] > 0)
+                if (dotProducts[2] >= 0)
                 {
                     return cubeRight;
                 }
@@ -672,111 +652,106 @@ public class GameLogic : MonoBehaviour
                     return cubeLeft;
                 }
             }
-
+            //***EDIT LATER*** cases for multiple wall entered 
+            else
+            {
+                return none;
+            }
         }
     }
 
-    public Vector3[] calculateFingerForceValues(Vector3 cubeVelocity, Vector3 indexVelocity, Vector3 thumbVelocity, Vector3 middleVelocity,
-        Vector3 cubePosition, Vector3 indexPosition, Vector3 thumbPosition, Vector3 middlePosition,
-        Vector3 indexPenetration, Vector3 thumbPenetration, Vector3 middlePenetration,
-        float indexPenetrationMagSign, float thumbPenetrationMagSign, float middlePenetrationMagSign)
+    public Vector3 getPenetration(int entryWall, Vector3 fingerToCubeVec, Vector3 cubePosition, Vector3 fingerPosition, float radius)
     {
-        Vector3 indexForceVal;
-        Vector3 thumbForceVal;
-        Vector3 middleForceVal;
+        Vector3 penetrationVector = Vector3.zero;
 
-        Vector3 indexRelVelocity = indexVelocity - cubeVelocity; //cubeVelocity - indexVelocity;
-        Vector3 thumbRelVelocity = thumbVelocity - cubeVelocity; //cubeVelocity - thumbVelocity;
-        Vector3 middleRelVelocity = middleVelocity - cubeVelocity; //cubeVelocity - middleVelocity;
-
-        Vector3 indexShearVelocity = getShearVelocity(indexRelVelocity, indexPosition - cubePosition);
-        Vector3 thumbShearVelocity = getShearVelocity(thumbRelVelocity, thumbPosition - cubePosition);
-        Vector3 middleShearVelocity = getShearVelocity(middleRelVelocity, middlePosition - cubePosition);
-
-        if (isPenetrating == false)
+        //Pentration in cube +z
+        if (entryWall == cubeRight)
         {
-            indexContact = false;
-            indexPenetrationForce = Vector3.zero;
-            indexShearForce = Vector3.zero;
-            indexForceVal = Vector3.zero;
+            penetrationVector.z = radius - fingerToCubeVec.z + 0.5f * cubeLength;
+        }
+        //Pentration in cube -z
+        if (entryWall == cubeLeft)
+        {
+            penetrationVector.z = -(radius + fingerToCubeVec.z + 0.5f * cubeLength);
+        }
+        //Pentration in cube +y
+        if (entryWall == cubeUp)
+        {
+            penetrationVector.y = radius - (fingerToCubeVec.y + 0.5f * cubeLength) + 0.5f * cubeLength;
+        }
+        //Pentration in cube -y
+        if (entryWall == cubeDown)
+        {
+            penetrationVector.y = -(radius + (fingerToCubeVec.y - 0.5f * cubeLength) + 0.5f * cubeLength);
+        }
+        //Pentration in cube +x
+        if (entryWall == cubeFront)
+        {
+            penetrationVector.x = -(radius - fingerToCubeVec.x + 0.5f * cubeLength);
+        }
+        //Pentration in cube -x
+        if (entryWall == cubeBack)
+        {
+            penetrationVector.x = radius + fingerToCubeVec.x + 0.5f * cubeLength;
+        }
+        //entryWall == 0 --> no pentration
+        else
+        {
+            return penetrationVector;
+        }
+
+        return penetrationVector;
+    }
+
+    public bool setContactBoolean(Vector3 penetration)
+    {
+        //No penetration
+        if (Vector3.Magnitude(penetration) == 0.0f)
+        {
+            return false;
         }
         else
         {
-            indexContact = true;
+            return true;
+        }
+    }
 
+    public Vector3[] calculateFingerForce(Vector3 fingerCubeVec, Vector3 cubeVelocity, Vector3 fingerVelocity,
+           Vector3 penetration, Vector3 pentrationDirection, bool contactBoolean, LineRenderer lineRenderer)
+    {
+        Vector3[] forceValues = { Vector3.zero,Vector3.zero,Vector3.zero };
+
+        Vector3 penetrationForce;
+        Vector3 shearForce;
+        Vector3 totalForceVal;
+        Vector3 relVelocity = fingerVelocity - cubeVelocity; //cubeVelocity - fingerVelocity;
+        Vector3 shearVelocity = getShearVelocity(relVelocity, fingerCubeVec);
+
+        if (contactBoolean == false)
+        {
+            penetrationForce = Vector3.zero;
+            shearForce = Vector3.zero;
+            totalForceVal = Vector3.zero;
+        }
+        else
+        {
             //Use Hooke's Law to find penetration force of cube on finger
-            indexPenetrationForce = cubeStiffness * indexPenetration;
+            penetrationForce = cubeStiffness * Vector3.Magnitude(penetration) * pentrationDirection;
 
             //Add shear forces of cube on finger due to friction
-            indexShearForce = -fingerDamping * indexShearVelocity - uK * Vector3.Magnitude(indexPenetrationForce) * sign(indexShearVelocity)
-                + (1.0f / 3.0f) * cubeMass * Physics.gravity;
+            shearForce = -fingerDamping * shearVelocity - uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
 
             /*For debugging*/
-            //drawShearVelocityVector(indexShearVelocity, indexPosition - cubePosition,
-            //   0.5f * cubeLength, 0.5f * indexDiameter, indexLineRenderer);
-
-            //drawPenetrationVector( penetrationLineRenderer);
+            drawShearVelocityVector(shearVelocity, fingerCubeVec, 0.5f * cubeLength, 0.02f, lineRenderer);
 
             //Sum of forces of cube on finger
-            indexForceVal = indexPenetrationForce + indexShearForce;
+            totalForceVal = penetrationForce + shearForce;
         }
 
-        if (thumbPenetrationMagSign <= 0.0f)
-        {
-            thumbContact = false;
-            thumbPenetrationForce = Vector3.zero;
-            thumbShearForce = Vector3.zero;
-            thumbForceVal = Vector3.zero;
-        }
-        else
-        {
-            thumbContact = true;
-
-            //Use Hooke's Law to find force of cube on finger
-            thumbPenetrationForce = cubeStiffness * thumbPenetration;
-
-            //Add shear forces of cube on finger due to friction
-            thumbShearForce = -fingerDamping * thumbShearVelocity - uK * Vector3.Magnitude(thumbPenetrationForce) * sign(thumbShearVelocity);
-
-            /*For debugging*/
-            //drawShearVelocityVector(thumbShearVelocity, thumbPosition - cubePosition,
-            //    0.5f * cubeLength, 0.5f * thumbScaleValue, thumbLineRenderer);
-
-            //Sum of forces of cube on finger
-            thumbForceVal = thumbPenetrationForce + thumbShearForce;
-        }
-
-
-        if (middlePenetrationMagSign <= 0.0f)
-        {
-            middleContact = false;
-            middlePenetrationForce = Vector3.zero;
-            middleShearForce = Vector3.zero;
-            middleForceVal = Vector3.zero;
-        }
-        else
-        {
-            middleContact = true;
-
-            //Use Hooke's Law to find force of cube on finger
-            middlePenetrationForce = cubeStiffness * middlePenetration;
-
-            //Add shear forces of cube on finger due to friction
-            middleShearForce = -fingerDamping * middleShearVelocity - uK * Vector3.Magnitude(middlePenetrationForce) * sign(middleShearVelocity)
-                + (1.0f / 3.0f) * cubeMass * Physics.gravity;
-
-            /*For debugging*/
-            drawShearVelocityVector(middleShearVelocity, middlePosition - cubePosition,
-                0.5f * cubeLength, 0.5f * middleScaleValue, middleLineRenderer);
-
-            //Sum of forces of cube on finger
-            middleForceVal = middlePenetrationForce + middleShearForce;
-        }
-
-        //Finger Force on cube
-        forceValues[0] = -indexForceVal;
-        forceValues[1] = -thumbForceVal;
-        forceValues[2] = -middleForceVal;
+        //Finger Forces on cube
+        forceValues[0] = -penetrationForce;
+        forceValues[1] = -shearForce;
+        forceValues[2] = -totalForceVal;
         return forceValues;
     }
 
@@ -795,20 +770,20 @@ public class GameLogic : MonoBehaviour
     }
 
     public Vector3[] getCubeStatus(Vector3 cubePosition, Vector3 cubeVelocity, Vector3 cubeAcceleration,
-        Vector3 indexForce, Vector3 thumbForce, Vector3 middleForce, Vector3 floorNormalForce)
+        Vector3 indexForce, Vector3 thumbForce, Vector3 floorNormalForce)
     {
         Vector3 positionPrev = cubePosition;
         Vector3 velocityPrev = cubeVelocity;
         Vector3 accelerationPrev = cubeAcceleration;
 
-        cubeAcceleration = Physics.gravity + (indexForce + thumbForce + middleForce + floorNormalForce - cubeDamping * velocityPrev) / cubeMass;
+        cubeAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - cubeDamping * velocityPrev) / cubeMass;
         cubeForce = cubeMass * cubeAcceleration;
 
         cubeVelocity = velocityPrev + cubeAcceleration * Time.fixedDeltaTime;
         cubePosition = positionPrev + cubeVelocity * Time.fixedDeltaTime;
 
         /*For Debugging*/
-        //drawCubeForceVector(cubeForce, cubePosition, cubeLineRenderer);
+        drawCubeForceVector(cubeForce, cubePosition, cubeLineRenderer);
 
         cubeStatus[0] = cubePosition;
         cubeStatus[1] = cubeVelocity;
@@ -893,7 +868,7 @@ public class GameLogic : MonoBehaviour
         fingerLine.useWorldSpace = true;
         fingerLine.SetPosition(0, intersectionPoint);
         fingerLine.SetPosition(1, intersectionPoint + shearVelocity);
-        fingerLine.SetWidth(0.01f, 0.01f);
+        fingerLine.SetWidth(0.005f, 0.005f);
     }
 
     public void drawCubeForceVector(Vector3 cubeForce, Vector3 cubePosition, LineRenderer cubeLine)
@@ -901,29 +876,8 @@ public class GameLogic : MonoBehaviour
         cubeLine.useWorldSpace = true;
         cubeLine.SetPosition(0, cubePosition);
         cubeLine.SetPosition(1, cubePosition + cubeForce);
-        cubeLine.SetWidth(0.01f, 0.01f);
+        cubeLine.SetWidth(0.005f, 0.005f);
         cubeLine.material.color = Color.blue;
-    }
-
-    public void drawCubeRadialVector(Vector3 cubePosition, LineRenderer cubeRadialLine)
-    {
-        cubeRadialLine.useWorldSpace = true;
-        cubeRadialLine.SetPosition(0, cubePosition);
-        cubeRadialLine.SetPosition(1, cubePosition + cubeForce);
-        cubeRadialLine.SetWidth(0.01f, 0.01f);
-        cubeRadialLine.material.color = Color.yellow;
-    }
-
-    public void drawPenetrationVector(Vector3 penetration, Vector3 distanceVec, Vector3 cubeRadialVec, float fingerRadius, LineRenderer penetrationLine)
-    {
-        Vector3 cubeCenterToIntersectionPoint = distanceVec - cubeRadialVec;
-        Vector3 intersectionPoint = cubePosition + cubeCenterToIntersectionPoint;
-
-        penetrationLine.useWorldSpace = true;
-        penetrationLine.SetPosition(0, indexSpherePosition);
-        penetrationLine.SetPosition(1, indexSpherePosition + penetration);
-        penetrationLine.SetWidth(0.005f, 0.005f);
-        penetrationLine.material.color = Color.black;
     }
 
     public Vector3 sign(Vector3 x)

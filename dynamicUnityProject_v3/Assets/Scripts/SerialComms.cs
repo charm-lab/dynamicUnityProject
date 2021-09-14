@@ -106,7 +106,7 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().thumbOrientation.x,
                     player.GetComponent<GameLogic>().thumbOrientation.y,
                     player.GetComponent<GameLogic>().thumbOrientation.z,
-                    player.GetComponent<GameLogic>().thumbScaleValue,
+                    player.GetComponent<GameLogic>().thumbDiameter,
                     //Cube Info
                     player.GetComponent<GameLogic>().cubePosition.x,
                     player.GetComponent<GameLogic>().cubePosition.y,
@@ -134,7 +134,7 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().timeOfCurrentSuccess,
                     player.GetComponent<GameLogic>().timeSinceLastSuccess,
                     num4,
-                    //
+                    /**/
                     player.GetComponent<GameLogic>().indexShearForce.y,
                     player.GetComponent<GameLogic>().thumbShearForce.y,
                     player.GetComponent<GameLogic>().cubeWeight,
