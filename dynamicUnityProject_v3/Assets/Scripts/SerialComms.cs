@@ -138,8 +138,14 @@ public class SerialComms : MonoBehaviour
                     player.GetComponent<GameLogic>().indexShearForce.y,
                     player.GetComponent<GameLogic>().thumbShearForce.y,
                     player.GetComponent<GameLogic>().cubeWeight,
-                    player.GetComponent<GameLogic>().indexShearForce.y + player.GetComponent<GameLogic>().thumbShearForce.y -
-                    player.GetComponent<GameLogic>().cubeWeight
+                    player.GetComponent<GameLogic>().cubeAcceleration.x,
+                    player.GetComponent<GameLogic>().cubeAcceleration.y,
+                    player.GetComponent<GameLogic>().cubeAcceleration.z,
+                    -player.GetComponent<GameLogic>().cubeWeight
+                    - (player.GetComponent<GameLogic>().cubeDamping * player.GetComponent<GameLogic>().cubeVelocity.y)
+                    + player.GetComponent<GameLogic>().indexShearForce.y + player.GetComponent<GameLogic>().thumbShearForce.y
+                    + player.GetComponent<GameLogic>().floorNormalForce.y
+
                 };
 
                 //Add data to the lists

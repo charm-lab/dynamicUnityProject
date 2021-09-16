@@ -50,12 +50,12 @@ public class GameLogic : MonoBehaviour
     public Vector3 cubeAcceleration;
     public Vector3 cubeForce;
     public Vector3 cubeOrientation;
-    public float cubeLength = 0.05f; //m
-    public float cubeMass = 0.3f; //kg
+    public float cubeLength =0.1f; //m
+    public float cubeMass = 1.0f; //kg
     public float cubeStiffness = 500.0f; //in N/m
     public float cubeWeight; //N scalar
     [Range(1.0f, 500.0f)]
-    public float cubeDamping = 10.0f; //in N/m/s
+    public float cubeDamping = 50.0f; //in N/m/s
     [Range(0.0f, 100.0f)]
     public float fingerDamping = 10.0f; //in N/m/s
     [Range(0.0f, 100.0f)]
@@ -157,8 +157,8 @@ public class GameLogic : MonoBehaviour
     int cubeDown = 4;
     int cubeFront = 5;
     int cubeBack = 6;
-    Vector3 indexPentrationDirection;
-    Vector3 thumbPentrationDirection;
+    public Vector3 indexPentrationDirection;
+    public Vector3 thumbPentrationDirection;
 
 
     // Start is called before the first frame update
@@ -296,6 +296,9 @@ public class GameLogic : MonoBehaviour
         indexContact = setContactBoolean(indexPenetration);
         thumbContact = setContactBoolean(thumbPenetration);
 
+        indexPentrationDirection = sign(indexPenetration);
+        thumbPentrationDirection = sign(thumbPenetration);
+
         //Force Calculation
         indexForceValues = calculateFingerForce(indexCubeVec, cubeVelocity, indexVelocity, indexPenetration,
                    indexPentrationDirection, indexContact, indexLineRenderer);
@@ -312,13 +315,14 @@ public class GameLogic : MonoBehaviour
         indexForce = indexForceValues[2];
         thumbForce = thumbForceValues[2];
         floorNormalForce = calculateFloorNormalForce();
-
+        
         //Cube Pose
         cubeStatus = getCubeStatus(cubePosition, cubeVelocity, cubeAcceleration,
                        indexForce, thumbForce, floorNormalForce);
+
         cubePosition = cubeStatus[0];
         cube.transform.position = cubePosition;
-
+/**/
         //cubeOrientation = cube.transform.eulerAngles;
         cubeVelocity = cubeStatus[1];
         cubeAcceleration = cubeStatus[2];
@@ -667,12 +671,12 @@ public class GameLogic : MonoBehaviour
         //Pentration in cube +z
         if (entryWall == cubeRight)
         {
-            penetrationVector.z = radius - fingerToCubeVec.z + 0.5f * cubeLength;
+            penetrationVector.z = -(radius + fingerToCubeVec.z + 0.5f * cubeLength);
         }
         //Pentration in cube -z
         if (entryWall == cubeLeft)
         {
-            penetrationVector.z = -(radius + fingerToCubeVec.z + 0.5f * cubeLength);
+            penetrationVector.z = radius - fingerToCubeVec.z + 0.5f * cubeLength;
         }
         //Pentration in cube +y
         if (entryWall == cubeUp)
@@ -736,15 +740,16 @@ public class GameLogic : MonoBehaviour
         else
         {
             //Use Hooke's Law to find penetration force of cube on finger
-            penetrationForce = cubeStiffness * Vector3.Magnitude(penetration) * pentrationDirection;
+            penetrationForce = -cubeStiffness * Vector3.Magnitude(penetration) * pentrationDirection;
 
             //Add shear forces of cube on finger due to friction
-            shearForce = -fingerDamping * shearVelocity - uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+            shearForce = /* fingerDamping * shearVelocity +*/ -uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
 
             /*For debugging*/
             drawShearVelocityVector(shearVelocity, fingerCubeVec, 0.5f * cubeLength, 0.02f, lineRenderer);
 
             //Sum of forces of cube on finger
+            penetrationForce = Vector3.zero;
             totalForceVal = penetrationForce + shearForce;
         }
 
@@ -759,14 +764,15 @@ public class GameLogic : MonoBehaviour
     {
         if (cubePosition.y < 0.5f * cubeLength)
         {
-            floorPenetration = 0.5f * cubeLength - cubePosition.y;
+            floorPenetration =  0.5f * cubeLength - cubePosition.y;
+            return new Vector3(0.0f, cubeWeight + cubeStiffness * floorPenetration, 0.0f);
         }
         else
         {
-            floorPenetration = 0.0f;
+            floorPenetration = 0.0f; 
+            return new Vector3(0.0f, cubeStiffness * floorPenetration, 0.0f);
         }
 
-        return new Vector3(0.0f, cubeStiffness * floorPenetration, 0.0f);
     }
 
     public Vector3[] getCubeStatus(Vector3 cubePosition, Vector3 cubeVelocity, Vector3 cubeAcceleration,
@@ -776,7 +782,7 @@ public class GameLogic : MonoBehaviour
         Vector3 velocityPrev = cubeVelocity;
         Vector3 accelerationPrev = cubeAcceleration;
 
-        cubeAcceleration = Physics.gravity + (indexForce + thumbForce + floorNormalForce - cubeDamping * velocityPrev) / cubeMass;
+        cubeAcceleration = Physics.gravity + (-cubeDamping * velocityPrev + indexForce + thumbForce + floorNormalForce ) / cubeMass;
         cubeForce = cubeMass * cubeAcceleration;
 
         cubeVelocity = velocityPrev + cubeAcceleration * Time.fixedDeltaTime;
