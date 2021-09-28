@@ -548,12 +548,12 @@ MonoBehaviour:
   cubeForce: {x: 0, y: 0, z: 0}
   cubeOrientation: {x: 0, y: 0, z: 0}
   cubeLength: 0.05
-  cubeMass: 0.3
+  cubeMass: 1
   cubeStiffness: 500
   cubeWeight: 0
-  cubeDamping: 10
-  fingerDamping: 10
-  uK: 5
+  cubeDamping: 40
+  fingerDamping: 67
+  uK: 0.7
   dorsalCommand: 0
   ventralCommand: 0
   floorPenetration: 0
@@ -591,6 +591,8 @@ MonoBehaviour:
   cubeAxisZ: {x: 0, y: 0, z: 0}
   indexEntryWall: 0
   thumbEntryWall: 0
+  indexPentrationDirection: {x: 0, y: 0, z: 0}
+  thumbPentrationDirection: {x: 0, y: 0, z: 0}
 --- !u!4 &1192714444
 Transform:
   m_ObjectHideFlags: 0
