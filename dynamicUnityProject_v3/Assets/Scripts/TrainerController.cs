@@ -22,7 +22,6 @@ public class TrainerController : MonoBehaviour
 
     public float[] poseZero = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
     public float[] poseOne = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
-    public float[] poseTwo = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
 
     private Vector3 objectPosition;
     private Vector3 objectRotation;
@@ -80,10 +79,6 @@ public class TrainerController : MonoBehaviour
         else if (localPose[0] == 1)
         {
             poseOne = localPose;
-        }
-        else if (localPose[0] == 2)
-        {
-            poseTwo = localPose;
         }
         else
         {

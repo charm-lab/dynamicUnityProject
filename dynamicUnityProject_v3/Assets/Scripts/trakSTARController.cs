@@ -8,7 +8,7 @@ public class trakSTARController : MonoBehaviour
 
     public GameObject trakSTARPlaceholder;
 
-    public float[] trakSTARBasePose = { 0f, 0f, 0f, 0f, 0f, 0f, 0f };
+    public float[] trakSTARBasePose = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     public Vector3 trakSTARBasePosition;
     public Vector3 trakSTARBaseRotation;
 

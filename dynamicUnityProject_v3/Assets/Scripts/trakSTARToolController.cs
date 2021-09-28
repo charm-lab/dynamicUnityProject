@@ -40,9 +40,5 @@ public class trakSTARToolController : MonoBehaviour
         {
             toolPose = TrainerController.instance.poseOne;
         }
-        else if (toolNumber == 2)
-        {
-            toolPose = TrainerController.instance.poseTwo;
-        }
     }
 }
