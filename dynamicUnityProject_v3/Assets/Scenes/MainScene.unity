@@ -613,6 +613,9 @@ MonoBehaviour:
   thumbEntryWall: 0
   indexPentrationDirection: {x: 0, y: 0, z: 0}
   thumbPentrationDirection: {x: 0, y: 0, z: 0}
+  Dn: {x: 0, y: 0, z: 0}
+  Dp: {x: 0, y: 0, z: 0}
+  deltaV: 0.03
 --- !u!4 &1192714444
 Transform:
   m_ObjectHideFlags: 0

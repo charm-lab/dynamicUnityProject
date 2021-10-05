@@ -160,6 +160,12 @@ public class GameLogic : MonoBehaviour
     public Vector3 indexPentrationDirection;
     public Vector3 thumbPentrationDirection;
 
+    //Friction variables
+    public Vector3 Dn; //N
+    public Vector3 Dp; //N
+    [Range(0.0f, 0.1f)]
+    public float deltaV = 0.03f; //m/s
+
 
     // Start is called before the first frame update
     void Start()
@@ -739,6 +745,7 @@ public class GameLogic : MonoBehaviour
         Vector3 shearVelocity = getShearVelocity(fingerVelocity, fingerCubeVec, penetrationDirection);
 
         Vector3 staticFriction = Vector3.zero;
+        Vector3 dynamicFriction = Vector3.zero;
 
         if (contactBoolean == false)
         {
@@ -751,19 +758,63 @@ public class GameLogic : MonoBehaviour
             //Use Hooke's Law to find penetration force of finger on cube
             penetrationForce = cubeStiffness * Vector3.Magnitude(penetration) * penetrationDirection;
 
+            /*Pseudocode for friction calcuations*/
             //Add shear forces of on cube due to friction
-            Vector3 dampingFriction = fingerDamping * shearVelocity;
-            Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
-
-            //Apply static friction when slip occurs
-            if (Vector3.Magnitude(shearVelocity) <= 0.1f)
+            if (-Vector3.Magnitude(shearVelocity) < -deltaV || Vector3.Magnitude(shearVelocity) > deltaV)
             {
-                staticFriction = uK * Vector3.Magnitude(penetrationForce) * sign(-Physics.gravity);
-            }        
-            
-            shearForce = /**/coulombFriction + dampingFriction + staticFriction;
+                /*Dynamic friction*/
+                Vector3 dampingFriction = fingerDamping * shearVelocity;
+                Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+                dynamicFriction = coulombFriction + dampingFriction;
+                //Debug.Log("DYNAMIC: " + dynamicFriction.ToString());
+            }
+            else
+            {
+                /*Static friction*/
+                float staticFrictionX = 0.0f; float staticFrictionY = 0.0f; float staticFrictionZ = 0.0f;
 
-            Debug.Log("Coulomb Friction: " + coulombFriction.ToString() + "  Damping Friction: " + dampingFriction.ToString());
+                //Sum of non-frictional forces applied to the system:
+                Vector3 appliedForces = cubeMass*Physics.gravity + (-cubeDamping * cubeVelocity + penetrationForce + floorNormalForce);
+                
+                //Fa = shear component of non-frictional forces applied to the system
+                Vector3 Fa = Vector3.Dot(appliedForces, sign(shearVelocity)) * sign(shearVelocity);
+
+                Dn = -uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+                Dp = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+
+                if (shearVelocity.x < 0.0f)
+                {
+                    staticFrictionX = Mathf.Max(Dn.x, Fa.x); 
+                }
+                else
+                {
+                    staticFrictionX = Mathf.Min(Dp.x, Fa.x);
+                    Debug.Log("Dp: " + Dp.ToString() + " Fa: " + Fa.ToString());
+                    Debug.Log(staticFrictionX.ToString());
+                }
+                if (shearVelocity.y < 0.0f)
+                {
+                    staticFrictionY = Mathf.Max(Dn.y, Fa.y);
+                }
+                else
+                {
+                    staticFrictionY = Mathf.Min(Dp.y, Fa.y);
+                }
+                if (shearVelocity.z < 0.0f)
+                {
+                    staticFrictionZ = Mathf.Max(Dn.z, Fa.z);
+                }
+                else
+                {
+                    staticFrictionZ = Mathf.Min(Dp.z, Fa.z);
+                }
+
+                staticFriction = new Vector3(staticFrictionX, staticFrictionY, staticFrictionZ);
+                //Debug.Log("STATIC: " + staticFriction.ToString());
+            }
+
+            shearForce = dynamicFriction + staticFriction/**/;
+
             /*For debugging*/
             drawShearVelocityVector(shearVelocity, fingerCubeVec, 0.5f * cubeLength, 0.01f, lineRenderer, lineColor);
 
@@ -790,7 +841,7 @@ public class GameLogic : MonoBehaviour
         {
             floorPenetration = 0.0f;
             return Vector3.zero;
-        }      
+        }
     }
 
     public Vector3[] getCubeStatus(Vector3 cubePosition, Vector3 cubeVelocity, Vector3 cubeAcceleration,
@@ -804,7 +855,7 @@ public class GameLogic : MonoBehaviour
         cubeForce = cubeMass * cubeAcceleration;
 
         //**Eliminate accumulation of velocity??
-        cubeVelocity = /*velocityPrev +*/ cubeAcceleration * Time.fixedDeltaTime;
+        cubeVelocity = /*velocityPrev + */cubeAcceleration * Time.fixedDeltaTime;
         cubePosition = /**/positionPrev + cubeVelocity * Time.fixedDeltaTime;
 
         /*For Debugging*/
