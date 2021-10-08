@@ -42,7 +42,7 @@ public class SerialComms : MonoBehaviour
         //stream.DiscardInBuffer();
         //stream.DiscardOutBuffer();
 
-        Debug.Log("Serial Communication Established");
+        Debug.Log("<size=14><color=green>Serial Communication Established</color></size>");
 
         //Serial Port Read and Write Timeouts
         stream.ReadTimeout = 5;
@@ -50,7 +50,7 @@ public class SerialComms : MonoBehaviour
 
         //Enable Game Logic
         player.GetComponent<GameLogic>().enabled = true;
-        Debug.Log("Game Logic Enabled");
+        Debug.Log("<size=14><color=blue>Game Logic Enabled</color></size>");
 
         writeSerial("0.00A0.00B");
         readSerial();
@@ -252,7 +252,7 @@ public class SerialComms : MonoBehaviour
             CSVManager.appendToReport(arduinoValidDataRow, unityValidDataRow);
         }
 
-        Debug.Log("Data Saved");
+        Debug.Log("<size=14><color=green>Data Saved</color></size>");
     }
 
     private void OnApplicationQuit()
@@ -266,7 +266,7 @@ public class SerialComms : MonoBehaviour
         saveDataToCSV(arduinoValidDataList, unityValidDataList);
 
         //Close Serial Stream
-        Debug.Log("GOODBYE");
+        Debug.Log("<size=14><color=blue>GOODBYE</color></size>");
         stream.Close();
 
         /*Shut down the application*/
