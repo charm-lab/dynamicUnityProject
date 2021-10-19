@@ -49,8 +49,8 @@ public class SerialComms : MonoBehaviour
         stream.WriteTimeout = 10;
 
         //Enable Game Logic
-        player.GetComponent<GameLogic>().enabled = true;
-        Debug.Log("<color=blue>Game Logic Enabled</color>");
+        GetComponent<GameMaster>().enabled = true;
+        Debug.Log("<color=blue>Game Master Enabled</color>");
 
         writeSerial("0.00A0.00B");
         readSerial();
@@ -66,10 +66,10 @@ public class SerialComms : MonoBehaviour
 
             if (currentTime - lastTime > 0.005)
             {
-                float num1 = player.GetComponent<GameLogic>().dorsalCommand;
-                float num2 = player.GetComponent<GameLogic>().ventralCommand;
+                float num1 = GetComponent<GameMaster>().dorsalCommand;
+                float num2 = GetComponent<GameMaster>().ventralCommand;
                 float num3 = currentTime;
-                int num4 = player.GetComponent<GameLogic>().trialNumber; // stop or trial number
+                int num4 = GetComponent<TrialManager>().trialNumber; // stop or trial number
 
                 string message = num1.ToString("0.00") + "A" + num2.ToString("0.00") + "B";
 
@@ -91,60 +91,60 @@ public class SerialComms : MonoBehaviour
                     currentTime,
                     //Index Info
                     num1,
-                    player.GetComponent<GameLogic>().indexPosition.x,
-                    player.GetComponent<GameLogic>().indexPosition.y,
-                    player.GetComponent<GameLogic>().indexPosition.z,
-                    player.GetComponent<GameLogic>().indexOrientation.x,
-                    player.GetComponent<GameLogic>().indexOrientation.y,
-                    player.GetComponent<GameLogic>().indexOrientation.z,
-                    player.GetComponent<GameLogic>().indexDiameter,
+                    GetComponent<GameMaster>().indexPosition.x,
+                    GetComponent<GameMaster>().indexPosition.y,
+                    GetComponent<GameMaster>().indexPosition.z,
+                    GetComponent<GameMaster>().indexOrientation.x,
+                    GetComponent<GameMaster>().indexOrientation.y,
+                    GetComponent<GameMaster>().indexOrientation.z,
+                    GetComponent<GameMaster>().indexDiameter,
                     //Thumb Info
                     num2,
-                    player.GetComponent<GameLogic>().thumbPosition.x,
-                    player.GetComponent<GameLogic>().thumbPosition.y,
-                    player.GetComponent<GameLogic>().thumbPosition.z,
-                    player.GetComponent<GameLogic>().thumbOrientation.x,
-                    player.GetComponent<GameLogic>().thumbOrientation.y,
-                    player.GetComponent<GameLogic>().thumbOrientation.z,
-                    player.GetComponent<GameLogic>().thumbDiameter,
+                    GetComponent<GameMaster>().thumbPosition.x,
+                    GetComponent<GameMaster>().thumbPosition.y,
+                    GetComponent<GameMaster>().thumbPosition.z,
+                    GetComponent<GameMaster>().thumbOrientation.x,
+                    GetComponent<GameMaster>().thumbOrientation.y,
+                    GetComponent<GameMaster>().thumbOrientation.z,
+                    GetComponent<GameMaster>().thumbDiameter,
                     //Cube Info
-                    player.GetComponent<GameLogic>().cubePosition.x,
-                    player.GetComponent<GameLogic>().cubePosition.y,
-                    player.GetComponent<GameLogic>().cubePosition.z,
-                    player.GetComponent<GameLogic>().cubeOrientation.x,
-                    player.GetComponent<GameLogic>().cubeOrientation.y,
-                    player.GetComponent<GameLogic>().cubeOrientation.z,
-                    player.GetComponent<GameLogic>().cubeLength,
-                    player.GetComponent<GameLogic>().cubeStiffness,
+                    GetComponent<GameMaster>().cubePosition.x,
+                    GetComponent<GameMaster>().cubePosition.y,
+                    GetComponent<GameMaster>().cubePosition.z,
+                    GetComponent<GameMaster>().cubeOrientation.x,
+                    GetComponent<GameMaster>().cubeOrientation.y,
+                    GetComponent<GameMaster>().cubeOrientation.z,
+                    GetComponent<GameMaster>().cubeLength,
+                    GetComponent<GameMaster>().cubeStiffness,
                     //Start Area Info
-                    player.GetComponent<GameLogic>().startingAreaPosition.x,
-                    player.GetComponent<GameLogic>().startingAreaPosition.y,
-                    player.GetComponent<GameLogic>().startingAreaPosition.z,
-                    player.GetComponent<GameLogic>().startingAreaRadius,
-                    player.GetComponent<GameLogic>().startingAreaHeight,
+                    GetComponent<TrialManager>().startingAreaPosition.x,
+                    GetComponent<TrialManager>().startingAreaPosition.y,
+                    GetComponent<TrialManager>().startingAreaPosition.z,
+                    GetComponent<TrialManager>().startingAreaRadius,
+                    GetComponent<TrialManager>().startingAreaHeight,
                     //Target Area Info
-                    player.GetComponent<GameLogic>().targetAreaPosition.x,
-                    player.GetComponent<GameLogic>().targetAreaPosition.y,
-                    player.GetComponent<GameLogic>().targetAreaPosition.z,
-                    player.GetComponent<GameLogic>().targetAreaRadius,
-                    player.GetComponent<GameLogic>().targetAreaHeight,
+                    GetComponent<TrialManager>().targetAreaPosition.x,
+                    GetComponent<TrialManager>().targetAreaPosition.y,
+                    GetComponent<TrialManager>().targetAreaPosition.z,
+                    GetComponent<TrialManager>().targetAreaRadius,
+                    GetComponent<TrialManager>().targetAreaHeight,
                     //Trial Info
-                    player.GetComponent<GameLogic>().successCounter,
-                    player.GetComponent<GameLogic>().failCounter,
-                    player.GetComponent<GameLogic>().timeOfCurrentSuccess,
-                    player.GetComponent<GameLogic>().timeSinceLastSuccess,
+                    GetComponent<TrialManager>().successCounter,
+                    GetComponent<TrialManager>().failCounter,
+                    GetComponent<TrialManager>().timeOfCurrentSuccess,
+                    GetComponent<TrialManager>().timeSinceLastSuccess,
                     num4,
                     /**/
-                    player.GetComponent<GameLogic>().indexShearForce.y,
-                    player.GetComponent<GameLogic>().thumbShearForce.y,
-                    player.GetComponent<GameLogic>().cubeWeight,
-                    player.GetComponent<GameLogic>().cubeAcceleration.x,
-                    player.GetComponent<GameLogic>().cubeAcceleration.y,
-                    player.GetComponent<GameLogic>().cubeAcceleration.z,
-                    -player.GetComponent<GameLogic>().cubeWeight
-                    - (player.GetComponent<GameLogic>().cubeDamping * player.GetComponent<GameLogic>().cubeVelocity.y)
-                    + player.GetComponent<GameLogic>().indexShearForce.y + player.GetComponent<GameLogic>().thumbShearForce.y
-                    + player.GetComponent<GameLogic>().floorNormalForce.y
+                    GetComponent<GameMaster>().indexShearForce.y,
+                    GetComponent<GameMaster>().thumbShearForce.y,
+                    GetComponent<GameMaster>().cubeWeight,
+                    GetComponent<GameMaster>().cubeAcceleration.x,
+                    GetComponent<GameMaster>().cubeAcceleration.y,
+                    GetComponent<GameMaster>().cubeAcceleration.z,
+                    -GetComponent<GameMaster>().cubeWeight
+                    - (GetComponent<GameMaster>().cubeDamping * GetComponent<GameMaster>().cubeVelocity.y)
+                    + GetComponent<GameMaster>().indexShearForce.y + GetComponent<GameMaster>().thumbShearForce.y
+                    + GetComponent<GameMaster>().floorNormalForce.y
 
                 };
 

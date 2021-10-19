@@ -525,6 +525,8 @@ GameObject:
   - component: {fileID: 1192714444}
   - component: {fileID: 1192714445}
   - component: {fileID: 1192714443}
+  - component: {fileID: 1192714447}
+  - component: {fileID: 1192714446}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -574,36 +576,17 @@ MonoBehaviour:
   cubeDamping: 40
   fingerDamping: 67
   uK: 0.7
+  startingX: 0.3
+  startingZ: 0.2
   dorsalCommand: 0
   ventralCommand: 0
   floorPenetration: 0
   floorStiffness: 5000
   floorNormalForce: {x: 0, y: 0, z: 0}
   cubeStatus: []
-  startingAreaPosition: {x: 0, y: 0, z: 0}
-  startingAreaRadius: 0.2
-  startingAreaHeight: 0
-  targetAreaPosition: {x: 0, y: 0, z: 0}
-  targetToCubeDist: 0
-  targetAreaRadius: 0.2
-  targetAreaHeight: 0
-  isCubeInTarget: 0
-  waypointCenterHeight: 0.15
-  waypointRadius: 0.15
-  passedWaypoint: 0
   indexContact: 0
   thumbContact: 0
   heldCubeBefore: 0
-  trialNumber: 1
-  trialState: 0
-  numTrials: 4
-  numElapsedTimes: 3
-  successCounter: 0
-  failCounter: 0
-  timeOfCurrentSuccess: 0
-  timeSinceLastSuccess: 0
-  timeIndex: 0
-  elapsedTimes: []
   indexCubeVec: {x: 0, y: 0, z: 0}
   thumbCubeVec: {x: 0, y: 0, z: 0}
   cubeAxisX: {x: 0, y: 0, z: 0}
@@ -613,8 +596,6 @@ MonoBehaviour:
   thumbEntryWall: 0
   indexPentrationDirection: {x: 0, y: 0, z: 0}
   thumbPentrationDirection: {x: 0, y: 0, z: 0}
-  Dn: {x: 0, y: 0, z: 0}
-  Dp: {x: 0, y: 0, z: 0}
   deltaV: 0.1
 --- !u!4 &1192714444
 Transform:
@@ -645,6 +626,52 @@ MonoBehaviour:
   portName: COM3
   baudRate: 9600
   expectedUnityEntries: 0
+--- !u!114 &1192714446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192714442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cbbdbe62406b324a8f4220dedd2f1d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1192714447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192714442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 932d1385237591140b1905aa2ff4a69d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startingAreaPosition: {x: 0, y: 0, z: 0}
+  startingAreaRadius: 0.2
+  startingAreaHeight: 0
+  targetOffset: 0.4
+  targetAreaPosition: {x: 0, y: 0, z: 0}
+  targetToCubeDist: 0
+  targetAreaRadius: 0.2
+  targetAreaHeight: 0
+  isCubeInTarget: 0
+  waypointCenterHeight: 0.15
+  waypointRadius: 0.15
+  passedWaypoint: 0
+  timeOfCurrentSuccess: 0
+  timeSinceLastSuccess: 0
+  timeIndex: 0
+  elapsedTimes: []
+  trialNumber: 1
+  trialState: 0
+  numTrials: 4
+  numElapsedTimes: 3
+  successCounter: 0
+  failCounter: 0
 --- !u!1 &1409151990
 GameObject:
   m_ObjectHideFlags: 0
