@@ -1,0 +1,18 @@
+<linker>
+       <assembly fullname="BleWinrtDll">
+               <type fullname="BleWinrtDll" preserve="all"/>
+       </assembly>
+
+       <assembly fullname="BleWinrtDll">
+                <type fullname="BleWinrtDll" preserve="all">
+                       <method name="BlewWinrtDll.TestFunction"/>
+                </type>
+       </assembly>
+    
+    <assembly fullname = "BleWinrtDll">
+        <type fullname = "BleWinrtDll.TestFunction" perserve= "all">
+        </type>
+    </assembly>
+           
+
+</linker>

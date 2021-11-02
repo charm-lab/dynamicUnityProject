@@ -470,28 +470,35 @@ public class GameMaster : MonoBehaviour
             //Use Hooke's Law to find penetration force of finger on cube
             penetrationForce = cubeStiffness * Vector3.Magnitude(penetration) * penetrationDirection;
 
-           /* #region DynamicFriction
-            //Add shear forces of on cube due to friction
-            if (-Vector3.Magnitude(shearVelocity) < -deltaV || Vector3.Magnitude(shearVelocity) > deltaV)
-            {
-                //Dynamic friction
-                Vector3 dampingFriction = fingerDamping * shearVelocity;
-                Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
-                dynamicFriction = coulombFriction + dampingFriction;
-            }
-            #endregion DynamicFriction
-            #region StaticFriction
-            else*/
+            /* #region DynamicFriction
+             //Add shear forces of on cube due to friction
+             if (-Vector3.Magnitude(shearVelocity) < -deltaV || Vector3.Magnitude(shearVelocity) > deltaV)
+             {
+                 //Dynamic friction
+                 Vector3 dampingFriction = fingerDamping * shearVelocity;
+                 Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+                 dynamicFriction = coulombFriction + dampingFriction;
+             }
+             #endregion DynamicFriction
+             #region StaticFriction
+             else*/
             {
                 //Sum of non-frictional forces applied to the system:
                 Vector3 Fa = cubeMass * Physics.gravity + (-cubeDamping * cubeVelocity + penetrationForce + floorNormalForce);
                 //Vector3 Fa = -(-cubeDamping * cubeVelocity + penetrationForce + floorNormalForce);
-                Vector3 fStatic = uK * Vector3.Magnitude(penetrationForce) * sign(Fa);
-
-              //  staticFriction = Mathf.min()
-
-                #region StaticFrictionCalc
                 /*
+                float fStaticX = 0.0f;
+                float fStaticY = -cubeMass * Physics.gravity.y;
+                float fStaticZ = 0.0f;
+                Vector3 fStatic = new Vector3(fStaticX, fStaticY, fStaticZ);
+                //Vector3 fStatic = uK * Vector3.Magnitude(penetrationForce) * sign(Fa);
+
+                staticFriction = fStatic;
+                */
+
+                Vector3 D = uK * Vector3.Magnitude(penetrationForce) * sign(Fa);
+                #region StaticFrictionCalc
+
                 if (shearVelocity.x < 0.0f)
                 {
                     staticFriction.x = Mathf.Max(D.x, Fa.x);
@@ -527,11 +534,10 @@ public class GameMaster : MonoBehaviour
                     staticFriction.z = Mathf.Min(D.z, Fa.z);
                     //staticFriction.z = Fa.z;
                     //staticFriction.z = D.z;
-                }*/
+                }
                 #endregion StaticFrictionCalc
 
-                Debug.Log("**AppliedForces: " + Fa.ToString("F4") + " | D: " + D.ToString("F4"));
-                Debug.Log("fDynamic: " + dynamicFriction.ToString("F4") + " | fStatic: " + staticFriction.ToString("F4") + " | ShearV: " + shearVelocity.ToString("F4"));
+                //Debug.Log("**AppliedForces: " + Fa.ToString("F4") + " | fDynamic: " + dynamicFriction.ToString("F4") + " | fStatic: " + staticFriction.ToString("F4") + " | ShearV: " + shearVelocity.ToString("F4"));
 
                 //Debug.Log("Dn: " + Dn.ToString("F4") + " | Dp: " + Dp.ToString("F4") + " | Fa: " + Fa.ToString("F4"));
                 //Debug.Log("\nShearV: " + shearVelocity.ToString("F4") + "\nfStatic:  " + staticFriction.ToString("F4") + "\nFa:         " + Fa.ToString("F4"));

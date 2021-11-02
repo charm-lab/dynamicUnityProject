@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 0
+    path: Assets/Scenes/BluetoothLowEnergy.unity
+    guid: 0545e1f9efa4f794197d11615385ba48
+  - enabled: 0
+    path: Assets/Scenes/BluetoothLowEnergyV5.unity
+    guid: dd947b8726dc74b42b2997153353db02
+  - enabled: 0
+    path: Assets/Scenes/TapToPlace_V2.unity
+    guid: aa7685afd9acb23448fbc5a2b104a272
+  - enabled: 0
+    path: Assets/Scenes/Demo/CubeDemoScene.unity
+    guid: 81cc61aa01cb6b247a41168716b9b307
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
+  m_configObjects:
+    Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: 3bc4a09208844c141a39f988720d9d0b, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e870360bfb75b98499663e1e7641b520, type: 2}

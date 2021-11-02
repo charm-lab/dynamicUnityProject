@@ -1,0 +1,35 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class NeedleCollision : MonoBehaviour
+{
+    public GameObject BLE;
+    CubeBLE cubeBLE;
+    
+    public void Start()
+    {
+        cubeBLE= BLE.GetComponent<CubeBLE>();
+    }
+    
+    void OnTriggerEnter(Collider other)
+    {
+    
+       
+        Debug.Log(other.name + "  " + this.name);
+        GameObject parent = this.transform.parent.gameObject;
+        parent.GetComponent<Renderer>().material.color = Color.green;
+        
+        cubeBLE.WriteMotor(125,125);
+    }
+    
+    void OnTriggerExit()
+    {
+    
+        GameObject parent = this.transform.parent.gameObject;
+        parent.GetComponent<Renderer>().material.color = Color.red;
+        cubeBLE.WriteMotor(0,0);
+    
+    }
+    
+}
