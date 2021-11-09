@@ -239,7 +239,7 @@ public class GameMaster : MonoBehaviour
         //Force Calculation      
         //Penetration Force
         indexPenetrationForce = calculatePenetrationForce(indexPenetration, indexPentrationDirection, indexContact);
-        indexPenetrationForce = calculatePenetrationForce(thumbPenetration, thumbPentrationDirection, thumbContact);
+        thumbPenetrationForce = calculatePenetrationForce(thumbPenetration, thumbPentrationDirection, thumbContact);
 
         //Shear Force
         Vector3 shearForces = calculateShearForces(indexCubeVec, thumbCubeVec, cubeVelocity, indexVelocity, thumbVelocity,
@@ -494,7 +494,7 @@ public class GameMaster : MonoBehaviour
             Vector3 Fa = cubeMass * Physics.gravity + (-cubeDamping * cubeVelocity + indexPenetrationForce
                 + thumbPenetrationForce + floorNormalForce);
 
-            Vector3 D = uK * Vector3.Magnitude(indexPenetrationForce + thumbPenetrationForce) * sign(Fa);
+            Vector3 D = uK * Vector3.Magnitude(indexPenetrationForce + thumbPenetrationForce) * sign(Fa);   
 
             staticFriction = getStaticFriction(indexShearVel, Fa, D) + getStaticFriction(thumbShearVel, Fa, D);
             Debug.Log("**AppliedForces: " + Fa.ToString("F4") + " | fDynamic: " + dynamicFriction.ToString("F4") + " | fStatic: " + staticFriction.ToString("F4"));
