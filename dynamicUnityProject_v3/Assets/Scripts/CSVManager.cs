@@ -19,15 +19,15 @@ public static class CSVManager
     {
         //Unity Info:
         "CurrentTime [sec]",
-        "indexPositionCommand (1-DoF) [mm]",/*
+        "indexPositionCommand (1-DoF) [mm]",
         "indexPosition X [mm]",
         "indexPosition Y [mm]",
         "indexPosition Z [mm]",
         "indexOrientation X [deg]",
         "indexOrientation Y [deg]",
         "indexOrientation Z [deg]",
-        "indexDiameter [m]",*/
-        "thumbPositionCommand (1-DoF) [mm]",/*
+        "indexDiameter [m]",
+        "thumbPositionCommand (1-DoF) [mm]",
         "thumbPosition X [mm]",
         "thumbPosition Y [mm]",
         "thumbPosition Z [mm]",
@@ -64,7 +64,7 @@ public static class CSVManager
         "CubeAccelerationX",
         "CubeAccelerationY",
         "CubeAccelerationZ",
-        "Lift [>0 for pickup]",*/
+        "Lift [>0 for pickup]",
         //Arduino Info:
         "Arduino finalPos1 [mm]",
         "Arduino finalPos2 [mm]",

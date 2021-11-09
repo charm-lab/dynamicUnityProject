@@ -90,7 +90,7 @@ public class SerialComms : MonoBehaviour
                     //Unity runtime
                     currentTime,
                     //Index Info
-                    num1,/*
+                    num1,
                     GetComponent<GameMaster>().indexPosition.x,
                     GetComponent<GameMaster>().indexPosition.y,
                     GetComponent<GameMaster>().indexPosition.z,
@@ -98,8 +98,8 @@ public class SerialComms : MonoBehaviour
                     GetComponent<GameMaster>().indexOrientation.y,
                     GetComponent<GameMaster>().indexOrientation.z,
                     GetComponent<GameMaster>().indexDiameter,
-                    //Thumb Info*/
-                    num2,/*
+                    //Thumb Info
+                    num2,
                     GetComponent<GameMaster>().thumbPosition.x,
                     GetComponent<GameMaster>().thumbPosition.y,
                     GetComponent<GameMaster>().thumbPosition.z,
@@ -143,8 +143,7 @@ public class SerialComms : MonoBehaviour
                     -GetComponent<GameMaster>().cubeWeight
                     - (GetComponent<GameMaster>().cubeDamping * GetComponent<GameMaster>().cubeVelocity.y)
                     + GetComponent<GameMaster>().indexShearForce.y + GetComponent<GameMaster>().thumbShearForce.y
-                    + GetComponent<GameMaster>().floorNormalForce.y*/
-
+                    + GetComponent<GameMaster>().floorNormalForce.y
                 };
 
                 //Add data to the lists

@@ -89,6 +89,8 @@ public class GameMaster : MonoBehaviour
     LineRenderer cubeLineRenderer;
     #endregion
 
+    Vector3[] shearForces;
+
     [Header("Other Cube Variables")]
     public Vector3 indexCubeVec;
     public Vector3 thumbCubeVec;
@@ -156,6 +158,7 @@ public class GameMaster : MonoBehaviour
         cubeStatus = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         indexForceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
         thumbForceValues = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
+        shearForces = new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero };
 
         indexContact = false;
         thumbContact = false;
@@ -176,6 +179,8 @@ public class GameMaster : MonoBehaviour
 
         indexPentrationDirection = Vector3.zero;
         thumbPentrationDirection = Vector3.zero;
+
+
     }
 
     // Update is called once per frame
@@ -231,21 +236,22 @@ public class GameMaster : MonoBehaviour
         indexPentrationDirection = sign(indexPenetration);
         thumbPentrationDirection = sign(thumbPenetration);
 
-        //Force Calculation
-        indexForceValues = calculateFingerForce(indexCubeVec, cubeVelocity, indexVelocity, indexPenetration,
-                   indexPentrationDirection, indexContact, indexLineRenderer, Color.red);
-        thumbForceValues = calculateFingerForce(thumbCubeVec, cubeVelocity, thumbVelocity, thumbPenetration,
-            thumbPentrationDirection, thumbContact, thumbLineRenderer, Color.cyan);
-
+        //Force Calculation      
         //Penetration Force
-        indexPenetrationForce = indexForceValues[0];
-        thumbPenetrationForce = thumbForceValues[0];
+        indexPenetrationForce = calculatePenetrationForce(indexPenetration, indexPentrationDirection, indexContact);
+        indexPenetrationForce = calculatePenetrationForce(thumbPenetration, thumbPentrationDirection, thumbContact);
+
         //Shear Force
-        indexShearForce = indexForceValues[1];
-        thumbShearForce = thumbForceValues[1];
+        Vector3 shearForces = calculateShearForces(indexCubeVec, thumbCubeVec, cubeVelocity, indexVelocity, thumbVelocity,
+            indexPenetrationForce, thumbPenetrationForce, indexLineRenderer, thumbLineRenderer, 
+            Color.red, Color.cyan);
+
+        indexShearForce = shearForces[0];
+        thumbShearForce = shearForces[1];
+
         //Total force
-        indexForce = indexForceValues[2];
-        thumbForce = thumbForceValues[2];
+        indexForce = indexPenetrationForce + indexShearForce;
+        thumbForce = thumbPenetrationForce + thumbShearForce;
         floorNormalForce = calculateFloorNormalForce();
 
         //Cube Pose
@@ -445,121 +451,105 @@ public class GameMaster : MonoBehaviour
         }
     }
 
-    public Vector3[] calculateFingerForce(Vector3 fingerCubeVec, Vector3 cubeVelocity, Vector3 fingerVelocity,
-           Vector3 penetration, Vector3 penetrationDirection, bool contactBoolean, LineRenderer lineRenderer, Color lineColor)
+    public Vector3 calculatePenetrationForce(Vector3 penetration, Vector3 penetrationDirection, bool contactBoolean)
     {
-        Vector3[] forceValues = { Vector3.zero, Vector3.zero, Vector3.zero };
-
-        Vector3 penetrationForce;
-        Vector3 shearForce;
-        Vector3 totalForceVal;
-        Vector3 relVelocity = fingerVelocity - cubeVelocity;
-        Vector3 shearVelocity = getShearVelocity(fingerVelocity, fingerCubeVec, penetrationDirection);
-
-        Vector3 staticFriction = Vector3.zero;
-        Vector3 dynamicFriction = Vector3.zero;
-
         if (contactBoolean == false)
         {
-            penetrationForce = Vector3.zero;
-            shearForce = Vector3.zero;
-            totalForceVal = Vector3.zero;
+            return Vector3.zero;
         }
         else
         {
             //Use Hooke's Law to find penetration force of finger on cube
-            penetrationForce = cubeStiffness * Vector3.Magnitude(penetration) * penetrationDirection;
+            return cubeStiffness * Vector3.Magnitude(penetration) * penetrationDirection;
+        }
+    }
 
-            /* #region DynamicFriction
-             //Add shear forces of on cube due to friction
-             if (-Vector3.Magnitude(shearVelocity) < -deltaV || Vector3.Magnitude(shearVelocity) > deltaV)
-             {
-                 //Dynamic friction
-                 Vector3 dampingFriction = fingerDamping * shearVelocity;
-                 Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
-                 dynamicFriction = coulombFriction + dampingFriction;
-             }
-             #endregion DynamicFriction
-             #region StaticFriction
-             else*/
-            {
-                //Sum of non-frictional forces applied to the system:
-                Vector3 Fa = cubeMass * Physics.gravity + (-cubeDamping * cubeVelocity + penetrationForce + floorNormalForce);
-                //Vector3 Fa = -(-cubeDamping * cubeVelocity + penetrationForce + floorNormalForce);
-                /*
-                float fStaticX = 0.0f;
-                float fStaticY = -cubeMass * Physics.gravity.y;
-                float fStaticZ = 0.0f;
-                Vector3 fStatic = new Vector3(fStaticX, fStaticY, fStaticZ);
-                //Vector3 fStatic = uK * Vector3.Magnitude(penetrationForce) * sign(Fa);
+    public Vector3 calculateShearForces(Vector3 indexCubeVec, Vector3 thumbCubeVec, Vector3 cubeVel,
+            Vector3 indexVel, Vector3 thumbVel, Vector3 indexPenForce, Vector3 thumbPenForce,
+            LineRenderer indexLineRenderer, LineRenderer thumbLineRenderer, Color indexLineColor, Color thumbLineColor)
+    {
+        Vector3 shearForce = Vector3.zero;
+        Vector3 staticFriction = Vector3.zero;
+        Vector3 dynamicFriction = Vector3.zero;
 
-                staticFriction = fStatic;
-                */
+        Vector3 indexRelVel = indexVel - cubeVel;
+        Vector3 thumbRelVel = thumbVel - cubeVel;
+        Vector3 indexShearVel = getShearVelocity(indexVel, indexCubeVec, sign(indexPenForce));
+        Vector3 thumbShearVel = getShearVelocity(thumbVel, thumbCubeVec, sign(thumbPenForce));
 
-                Vector3 D = uK * Vector3.Magnitude(penetrationForce) * sign(Fa);
-                #region StaticFrictionCalc
+        /* #region DynamicFriction
+         //Add shear forces of on cube due to friction
+         if (-Vector3.Magnitude(shearVelocity) < -deltaV || Vector3.Magnitude(shearVelocity) > deltaV)
+         {
+             //Dynamic friction
+             Vector3 dampingFriction = fingerDamping * shearVelocity;
+             Vector3 coulombFriction = uK * Vector3.Magnitude(penetrationForce) * sign(shearVelocity);
+             dynamicFriction = coulombFriction + dampingFriction;
+         }
+         #endregion DynamicFriction
+         #region StaticFriction
+         else*/
+        {
+            //Sum of non-frictional forces applied to the system:
+            Vector3 Fa = cubeMass * Physics.gravity + (-cubeDamping * cubeVelocity + indexPenetrationForce
+                + thumbPenetrationForce + floorNormalForce);
 
-                if (shearVelocity.x < 0.0f)
-                {
-                    staticFriction.x = Mathf.Max(D.x, Fa.x);
-                    //staticFriction.x = Fa.x;
-                    //staticFriction.x = D.x;
-                }
-                if (shearVelocity.x >= 0.0f)
-                {
-                    staticFriction.x = Mathf.Min(D.x, Fa.x);
-                    //staticFriction.x = Fa.x;
-                    //staticFriction.x = D.x;
-                }
-                if (shearVelocity.y < 0.0f)
-                {
-                    staticFriction.y = Mathf.Max(D.y, Fa.y);
-                    //staticFriction.y = Fa.y;
-                    //staticFriction.y = D.y;
-                }
-                if (shearVelocity.y >= 0.0f)
-                {
-                    staticFriction.y = Mathf.Min(D.y, Fa.y);
-                    //staticFriction.y = Fa.y;
-                    //staticFriction.y = D.y;
-                }
-                if (shearVelocity.z < 0.0f)
-                {
-                    staticFriction.z = Mathf.Max(D.z, Fa.z);
-                    //staticFriction.z = Fa.z;
-                    //staticFriction.z = D.z;
-                }
-                if (shearVelocity.z >= 0.0f)
-                {
-                    staticFriction.z = Mathf.Min(D.z, Fa.z);
-                    //staticFriction.z = Fa.z;
-                    //staticFriction.z = D.z;
-                }
-                #endregion StaticFrictionCalc
+            Vector3 D = uK * Vector3.Magnitude(indexPenetrationForce + thumbPenetrationForce) * sign(Fa);
 
-                //Debug.Log("**AppliedForces: " + Fa.ToString("F4") + " | fDynamic: " + dynamicFriction.ToString("F4") + " | fStatic: " + staticFriction.ToString("F4") + " | ShearV: " + shearVelocity.ToString("F4"));
+            staticFriction = getStaticFriction(indexShearVel, Fa, D) + getStaticFriction(thumbShearVel, Fa, D);
+            Debug.Log("**AppliedForces: " + Fa.ToString("F4") + " | fDynamic: " + dynamicFriction.ToString("F4") + " | fStatic: " + staticFriction.ToString("F4"));
 
-                //Debug.Log("Dn: " + Dn.ToString("F4") + " | Dp: " + Dp.ToString("F4") + " | Fa: " + Fa.ToString("F4"));
-                //Debug.Log("\nShearV: " + shearVelocity.ToString("F4") + "\nfStatic:  " + staticFriction.ToString("F4") + "\nFa:         " + Fa.ToString("F4"));
-            }
-            //#endregion StaticFriction
+        }
+        //Debug.Log("Dn: " + Dn.ToString("F4") + " | Dp: " + Dp.ToString("F4") + " | Fa: " + Fa.ToString("F4"));
+        //Debug.Log("\nShearV: " + shearVelocity.ToString("F4") + "\nfStatic:  " + staticFriction.ToString("F4") + "\nFa:         " + Fa.ToString("F4"));
 
-            shearForce = /*dynamicFriction +*/ staticFriction;
+        shearForce = /*dynamicFriction +*/ staticFriction;
 
-            /*For debugging*/
-            //drawShearVelocityVector(shearVelocity, fingerCubeVec, 0.5f * cubeLength, 0.01f, lineRenderer, lineColor);
+        return shearForce;
+    }
 
-            //Sum of forces of on cube 
-            totalForceVal = /**/penetrationForce + shearForce;
-            drawFingerForceVector(totalForceVal, fingerCubeVec, 0.5f * cubeLength, 0.01f, lineRenderer, lineColor);
+    public Vector3 getStaticFriction(Vector3 shearVelocity, Vector3 Fa, Vector3 D)
+    {
+        Vector3 staticFriction = Vector3.zero;
+
+        if (shearVelocity.x < 0.0f)
+        {
+            //staticFriction.x = Mathf.Max(D.x, Fa.x);
+            staticFriction.x = Fa.x;
+            //staticFriction.x = D.x;
+        }
+        if (shearVelocity.x >= 0.0f)
+        {
+            //staticFriction.x = Mathf.Min(D.x, Fa.x);
+            staticFriction.x = Fa.x;
+            //staticFriction.x = D.x;
+        }
+        if (shearVelocity.y < 0.0f)
+        {
+            //staticFriction.y = Mathf.Max(D.y, Fa.y);
+            staticFriction.y = Fa.y;
+            //staticFriction.y = D.y;
+        }
+        if (shearVelocity.y >= 0.0f)
+        {
+            //staticFriction.y = Mathf.Min(D.y, Fa.y);
+            staticFriction.y = Fa.y;
+            //staticFriction.y = D.y;
+        }
+        if (shearVelocity.z < 0.0f)
+        {
+            //staticFriction.z = Mathf.Max(D.z, Fa.z);
+            staticFriction.z = Fa.z;
+            //staticFriction.z = D.z;
+        }
+        if (shearVelocity.z >= 0.0f)
+        {
+            //staticFriction.z = Mathf.Min(D.z, Fa.z);
+            staticFriction.z = Fa.z;
+            //staticFriction.z = D.z;
         }
 
-        //Finger Forces on cube
-        forceValues[0] = penetrationForce;
-        forceValues[1] = shearForce;
-        forceValues[2] = totalForceVal;
-
-        return forceValues;
+        return staticFriction;
     }
 
     public Vector3 calculateFloorNormalForce()
@@ -663,8 +653,8 @@ public class GameMaster : MonoBehaviour
         return Vector3.Cross(normal, Vector3.Cross(vRel, normal)) / Mathf.Pow(normalMag, 2.0f);
     }
 
-    public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float cubeRadius, float fingerRadius, LineRenderer fingerLine,
-        Color lineColor)
+    public void drawShearVelocityVector(Vector3 shearVelocity, Vector3 distanceVec, float cubeRadius,
+        float fingerRadius, LineRenderer fingerLine, Color lineColor)
     {
         //vector distance between centers instersceting cubes
         float distanceMag = Vector3.Magnitude(distanceVec);
@@ -682,8 +672,8 @@ public class GameMaster : MonoBehaviour
         lineColor.a = 0.5f;
     }
 
-    public void drawFingerForceVector(Vector3 fingerForce, Vector3 distanceVec, float cubeRadius, float fingerRadius, LineRenderer fingerLine,
-        Color lineColor)
+    public void drawFingerForceVector(Vector3 fingerForce, Vector3 distanceVec, float cubeRadius,
+        float fingerRadius, LineRenderer fingerLine, Color lineColor)
     {
         //vector distance between centers instersceting cubes
         float distanceMag = Vector3.Magnitude(distanceVec);
