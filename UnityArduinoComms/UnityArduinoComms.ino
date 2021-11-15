@@ -38,7 +38,7 @@ double desiredPos2 = 0.00;
 /*Unity Variables & Timing*/
 double unityCurrentTime;
 double trialNumber = 1; //default
-
+  int counter = 0;
 /********************************************************
    Function setup
    Parameters: void
@@ -68,6 +68,7 @@ void setup() {
   while (!Serial) {
     //Blocking Code -- wait for serial port to connect
   }
+
 }
 
 void loop() {
@@ -90,6 +91,8 @@ void loop() {
 
   //Prep Data for Processing:
   Serial.println((String)finalPosition1 + "," + (String)finalPosition2);
+  //counter = counter+1;
+ // Serial.println((String)counter+"\n");
 }
 
 /********************************************************

@@ -78,6 +78,7 @@ public class SerialComms : MonoBehaviour
                 stream.DiscardInBuffer();
                 stream.DiscardOutBuffer();
                 //Write to Arudino via serial
+
                 writeSerial(message);
 
                 //Read the serial data that came from arduino
@@ -111,7 +112,7 @@ public class SerialComms : MonoBehaviour
             {
                 //read stuff
                 string arduinoMessage = stream.ReadLine();
-                //Debug.Log("arduinoMessage: " + arduinoMessage);
+                Debug.Log("arduinoMessage: " + arduinoMessage);
                 arduinoDataVals = arduinoMessage.Split(',');
 
                 #region

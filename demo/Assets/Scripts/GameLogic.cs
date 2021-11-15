@@ -865,7 +865,7 @@ public class GameLogic : MonoBehaviour
         /*penetration values in mm*/
         positionCommands[0] = dorsalVal;
         positionCommands[1] = ventralVal;
-        print("Dorsal: " + dorsalVal.ToString() + " | Ventral: " + ventralVal.ToString());
+        //print("Dorsal: " + dorsalVal.ToString() + " | Ventral: " + ventralVal.ToString());
         return positionCommands;
     }
 
